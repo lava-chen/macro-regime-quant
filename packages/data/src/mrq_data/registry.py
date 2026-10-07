@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .providers.alfred import AlfredProvider
 from .providers.base import DataProvider
 from .providers.csv import CsvProvider
 from .providers.fred import FredProvider
@@ -14,6 +15,7 @@ def default_provider_registry() -> dict[str, DataProvider]:
     """
 
     return {
+        "alfred": AlfredProvider(),
         "csv": CsvProvider(),
         "fred": FredProvider(),
         "yahoo": YahooProvider(),
