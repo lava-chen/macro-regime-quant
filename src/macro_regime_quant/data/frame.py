@@ -149,16 +149,19 @@ def normalize_observation_frame(
         out["available_date"] = pd.to_datetime(out["available_date"], errors="coerce")
 
     if "availability_basis" not in out.columns:
-        out["availability_basis"] = default_basis
+        # The provider declared no provenance at all. Two genuinely different
+        # situations, and conflating them is how unevidenced data sneaks through:
+        #   * a date exists but its evidence does not -> 'unverified'
+        #   * no date was ever supplied            -> 'unknown'
+        # 'unverified' without a date would be self-contradictory, so the date
+        # decides the label, not the caller's default.
+        has_dates = "available_date" in out.columns and out["available_date"].notna().any()
+        out["availability_basis"] = "unverified" if has_dates else "unknown"
     else:
         out["availability_basis"] = out["availability_basis"].astype("string").str.strip()
         missing_basis = out["availability_basis"].isna()
         if missing_basis.any():
             out.loc[missing_basis, "availability_basis"] = default_basis
-
-    if default_basis == "unverified" and "available_date" in out.columns:
-        # Provider handed us dates but no provenance: label them, do not trust them.
-        out.loc[out["availability_basis"] == "unknown", "availability_basis"] = "unknown"
 
     ordered = ["observation_date", "value"]
     for column in ("available_date", "availability_basis", "availability_evidence_url"):
