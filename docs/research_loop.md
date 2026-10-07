@@ -1,0 +1,110 @@
+# Research loop
+
+Write a signal, find out whether it predicts anything. Two minutes, not an
+afternoon.
+
+## The loop
+
+**1. Write a file that exposes one function.**
+
+```python
+# ideas/my_idea.py
+import pandas as pd
+
+def signal(panel: pd.DataFrame) -> pd.Series:
+    """panel is point-in-time: each row holds only what was knowable then."""
+    inflation = panel["us_core_cpi"].pct_change(12, fill_method=None)
+    growth = panel["us_payrolls"].pct_change(12, fill_method=None)
+    return (inflation - growth).rank(pct=True)   # any score, higher = more bullish
+```
+
+Your function may be named `signal`, `idea`, `build_signal` or `main`.
+
+**2. Tell it what it may look at, and what to predict.**
+
+```bash
+uv run macro-regime-quant test-idea ideas/my_idea.py \
+    --series us_core_cpi,us_payrolls \
+    --forward-assets us_oil_wti,us_copper_global \
+    --start 2000-01-01
+```
+
+**3. Read the verdict.**
+
+```
+                 IC   RankIC    IC/IR       n
+    1m        0.078    0.075     0.16     307
+    3m        0.117    0.119     0.25     305
+    6m        0.190    0.196     0.26     302
+   12m        0.319    0.318     0.77     296
+
+Verdict: best horizon 12m: IC +0.319 (strong, positive), IC/IR +0.77, n=296
+
+Forward return by signal bucket:
+ bucket  count mean_return  std_return
+      0     60    -2.0341%    0.251133
+      1     59    +9.8939%    0.210753
+      2     59   +12.4337%    0.280136
+      3     59    +9.2207%    0.357198
+      4     59   +30.0200%    0.367259
+  top-minus-bottom spread: +32.0541%
+
+! IC varies by more than 3x across horizons — a single-horizon result is
+  likely a coincidence, not a stable relationship
+```
+
+## What the numbers mean
+
+| Column | Reading |
+|---|---|
+| **IC** | Pearson correlation between your signal and the forward return. Above 0.05 is worth pursuing; below 0.02 is noise. |
+| **RankIC** | Same, on ranks — robust to outliers and to any monotone transform of your signal. Prefer it when the two disagree. |
+| **IC/IR** | Rolling 12-month IC mean over its standard deviation. Measures whether the relationship *stayed* stable, not just whether it exists. Needs ≥24 observations. |
+| **n** | Overlapping samples. Shrinks as the horizon grows, because long horizons need more runway. |
+| **buckets** | Your signal sorted into quintiles. Monotonicity across buckets is the real test — a single good level means nothing. |
+
+The tool warns you when the sample is small, when the signal is constant, and
+when the IC swings wildly across horizons. Read those before you read the IC.
+
+## Rules the loop enforces for you
+
+**The panel is point-in-time.** Each row contains only what was knowable at that
+month-end, so a signal cannot peek forward by construction. This is why the
+FRED-backed series matter: use `alfred` where the catalogue offers it, because
+`fred` returns revised values that did not exist at the time.
+
+**Forward returns start after the signal.** There is no same-period join, and
+the execution lag in the backtester exists for the same reason.
+
+**Targets must be prices.** Rates and yields are rejected outright: a yield of
+0.5% has no meaningful percentage return, and the ratio diverges. If your idea
+is about rates, test it against something tradable instead.
+
+**`--series` is a whitelist.** Only the columns you name reach your function,
+so a result cannot silently depend on a series you did not intend to use.
+
+## What to reach for
+
+| Need | Series |
+|---|---|
+| Commodities | `us_oil_wti` (1986–), `us_copper_global` (1992–) |
+| Dollar | `us_dollar_index_broad` (2006–), `eurusd` (1999–) |
+| Equity | `sp500_proxy` via Yahoo — needs `uv sync --all-packages --extra data` |
+
+FRED price series are used instead of Yahoo on purpose: yfinance rate-limits
+hard from shared IPs, and a research loop that breaks on a Tuesday is not a
+research loop.
+
+## After a signal earns its place
+
+Only once the IC is worth something, move to sizing and costs:
+
+```python
+from mrq_research.backtest import BacktestConfig, run_backtest
+
+result = run_backtest(prices, target_weights, BacktestConfig(transaction_cost_bps=5))
+print(result.metrics)
+```
+
+The backtester is long-only, charges on turnover, and delays execution by
+`execution_lag_periods` so a signal never fills at the bar that produced it.
