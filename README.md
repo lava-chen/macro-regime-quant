@@ -25,7 +25,7 @@ The project is intentionally layered:
 - China / US factor definitions;
 - four-regime Growth × Inflation baseline;
 - runnable US FRED pipeline;
-- China official snapshot contract with exact release dates;
+- China official snapshot contract with row-level release-date evidence;
 - regime-conditioned 3M / 6M / 12M cross-asset research.
 
 ## Quick start
@@ -52,12 +52,15 @@ python -m macro_regime_quant build-china-baseline \
   --output data/processed/china
 ```
 
+The China baseline admits only `availability_basis=official_release` rows by default. Choose the corresponding `--availability-policy` explicitly to include official schedules, fixed-lag estimates, or unverified legacy dates, and report that choice with any results.
+
 Research outputs include:
 
 ```text
 data/processed/us/raw_monthly.csv
 data/processed/us/factors.csv
 data/processed/us/regimes.csv
+data/processed/us/run_metadata.yaml
 
 reports/us_regimes/state_history.csv
 reports/us_regimes/asset_prices.csv

@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import yaml
+
 from .data.snapshots import validate_snapshot
 from .pipeline import build_china_baseline, build_us_baseline
 from .research.us_regime import analyze_us_regimes
@@ -26,6 +28,17 @@ def build_parser() -> argparse.ArgumentParser:
     china.add_argument("--end", default=None)
     china.add_argument("--output", default="data/processed/china")
     china.add_argument("--min-z-history", type=int, default=36)
+    china.add_argument(
+        "--availability-policy",
+        choices=[
+            "official_release_only",
+            "include_schedule",
+            "include_estimates",
+            "include_unverified",
+        ],
+        default="official_release_only",
+        help="Default includes only row dates backed by an official release document",
+    )
 
     snapshot = sub.add_parser(
         "validate-snapshot",
@@ -35,7 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
     snapshot.add_argument(
         "--allow-missing-available-date",
         action="store_true",
-        help="Allow fallback release lags instead of exact release dates",
+        help="Allow snapshots whose rows explicitly mark availability_basis=unknown",
     )
 
     research = sub.add_parser(
@@ -55,12 +68,18 @@ def _write_baseline(
     factors,
     regimes,
     output: str,
+    run_metadata: dict[str, object] | None = None,
 ) -> None:
     out = Path(output)
     out.mkdir(parents=True, exist_ok=True)
     raw.to_csv(out / "raw_monthly.csv")
     factors.to_csv(out / "factors.csv")
     regimes.to_frame().to_csv(out / "regimes.csv")
+    if run_metadata is not None:
+        (out / "run_metadata.yaml").write_text(
+            yaml.safe_dump(run_metadata, sort_keys=False),
+            encoding="utf-8",
+        )
     print(f"Wrote baseline to {out}")
 
 
@@ -75,6 +94,11 @@ def main() -> None:
                 min_z_history=args.min_z_history,
             ),
             output=args.output,
+            run_metadata={
+                "country": "united_states",
+                "availability_policy": "all; FRED uses approximate release lags",
+                "macro_vintage": "latest FRED vintage",
+            },
         )
         return
 
@@ -84,8 +108,14 @@ def main() -> None:
                 start=args.start,
                 end=args.end,
                 min_z_history=args.min_z_history,
+                availability_policy=args.availability_policy,
             ),
             output=args.output,
+            run_metadata={
+                "country": "china",
+                "availability_policy": args.availability_policy,
+                "macro_vintage": "frozen official release snapshots",
+            },
         )
         return
 
@@ -99,6 +129,7 @@ def main() -> None:
             f"rows={result.rows}",
             f"range={result.first_observation.date()}..{result.last_observation.date()}",
             f"available_date={result.has_available_date}",
+            f"availability_basis={result.availability_basis_counts}",
         )
         return
 

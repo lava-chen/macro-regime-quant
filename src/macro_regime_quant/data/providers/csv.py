@@ -29,9 +29,22 @@ class CsvProvider(DataProvider):
         df["observation_date"] = pd.to_datetime(df["observation_date"])
         columns = ["observation_date", "value"]
 
-        if "available_date" in df.columns:
-            df["available_date"] = pd.to_datetime(df["available_date"])
+        has_available_date = "available_date" in df.columns
+        if has_available_date:
+            df["available_date"] = pd.to_datetime(df["available_date"], errors="coerce")
             columns.append("available_date")
+
+        if "availability_basis" not in df.columns:
+            if has_available_date:
+                df["availability_basis"] = "unknown"
+                has_date = df["available_date"].notna()
+                df.loc[has_date, "availability_basis"] = "unverified"
+            else:
+                df["availability_basis"] = "unknown"
+        columns.append("availability_basis")
+
+        if "availability_evidence_url" in df.columns:
+            columns.append("availability_evidence_url")
 
         if start:
             df = df[df["observation_date"] >= pd.Timestamp(start)]
