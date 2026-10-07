@@ -38,7 +38,10 @@ class FrameContractReport:
     errors: tuple[str, ...]
     warnings: tuple[str, ...]
     rows: int
+    #: True when at least one row carries a usable available_date. Distinct from
+    #: ``has_available_date_column``, which only says the column exists.
     has_available_date: bool
+    has_available_date_column: bool
 
 
 def check_frame_contract(frame: pd.DataFrame, *, require_available_date: bool = False) -> (
@@ -73,8 +76,18 @@ def check_frame_contract(frame: pd.DataFrame, *, require_available_date: bool = 
         errors.append("value contains non-numeric or missing entries")
 
     has_available = "available_date" in frame.columns
-    if require_available_date and not has_available:
-        errors.append("frame must carry available_date under this policy")
+    available_values = (
+        pd.to_datetime(frame["available_date"], errors="coerce").notna()
+        if has_available
+        else pd.Series(False, index=frame.index)
+    )
+    if require_available_date and not bool(available_values.any()):
+        detail = (
+            "column is present but every entry is empty"
+            if has_available
+            else "column is absent"
+        )
+        errors.append(f"frame must carry usable available_date under this policy ({detail})")
 
     if "availability_basis" in frame.columns:
         basis = frame["availability_basis"].astype("string").str.strip()
@@ -83,7 +96,7 @@ def check_frame_contract(frame: pd.DataFrame, *, require_available_date: bool = 
             bad = sorted(basis.loc[invalid].dropna().unique().tolist())
             errors.append(f"invalid availability_basis {bad or ['<missing>']}; allowed {sorted(AVAILABILITY_BASES)}")
 
-        if has_available and not errors:
+        if has_available and "observation_date" in frame.columns:
             available = pd.to_datetime(frame["available_date"], errors="coerce")
             observation = pd.to_datetime(frame["observation_date"], errors="coerce")
             needs_date = basis.ne("unknown")
@@ -93,6 +106,20 @@ def check_frame_contract(frame: pd.DataFrame, *, require_available_date: bool = 
                 errors.append("rows with basis 'unknown' must not carry an available_date")
             if (available.notna() & (available < observation)).any():
                 errors.append("available_date cannot be earlier than observation_date")
+            if "availability_evidence_url" in frame.columns:
+                evidence = frame["availability_evidence_url"].astype("string").str.strip()
+                needs_evidence = basis.isin(EVIDENCED_BASES)
+                if (needs_evidence & (evidence.isna() | evidence.eq(""))).any():
+                    errors.append(
+                        "rows with an evidenced basis require availability_evidence_url"
+                    )
+                elif not evidence.loc[needs_evidence].str.startswith(("https://", "http://")).all():
+                    errors.append("availability_evidence_url must be an http(s) URL")
+            elif basis.isin(EVIDENCED_BASES).any():
+                errors.append(
+                    "rows with an evidenced basis require an availability_evidence_url column"
+                )
+
             unevidenced = basis.isin(AVAILABILITY_BASES - EVIDENCED_BASES) & available.notna()
             if unevidenced.any():
                 warnings.append(
@@ -105,7 +132,8 @@ def check_frame_contract(frame: pd.DataFrame, *, require_available_date: bool = 
         errors=tuple(errors),
         warnings=tuple(warnings),
         rows=len(frame),
-        has_available_date=has_available,
+        has_available_date=bool(available_values.any()),
+        has_available_date_column=has_available,
     )
 
 
@@ -119,21 +147,55 @@ def normalize_observation_frame(
     frame: pd.DataFrame,
     *,
     key: str = "<frame>",
-    default_basis: str = "unknown",
+    dated_rows_basis: str = "unverified",
 ) -> pd.DataFrame:
     """Give any provider output the single normalized shape downstream code expects.
 
-    Normalization is explicit and lossy-auditable:
+    Normalization is explicit and auditable:
 
     * ``observation_date`` and ``value`` are coerced to canonical types;
-    * a missing ``availability_basis`` is filled with ``default_basis`` rather than
-      being dropped, so a row can never silently lose its provenance label;
-    * rows are sorted by ``observation_date`` so downstream code can assume order.
+    * rows are sorted by ``observation_date`` (stably) so downstream code can
+      assume order;
+    * every row ends up carrying an ``availability_basis`` label, so provenance
+      can never be silently dropped.
 
-    It never invents an ``available_date``. A provider that cannot supply one keeps
-    ``availability_basis='unknown'``, which the availability policies exclude by
-    default. Guessing here is exactly the look-ahead bug this project exists to avoid.
+    The availability label is decided **per row**, matching the rule already
+    implemented in :meth:`CsvProvider.fetch`:
+
+    ==========================  ===============
+    row has ``available_date``  label
+    ==========================  ===============
+    no                           ``unknown``
+    yes, no basis column         ``dated_rows_basis``
+    yes, basis present           kept as given
+    ==========================  ===============
+
+    Frame-level inference ("this frame has some dates, so label them all
+    unverified") is deliberately not used: a series where only the first rows
+    have a known publication date would then hand an evidence label to rows
+    that have none.
+
+    It never invents an ``available_date``. Guessing one here is exactly the
+    look-ahead bug this project exists to prevent.
+
+    ``dated_rows_basis`` cannot be an evidenced basis (``official_release`` /
+    ``official_schedule``). Those may only be attached row by row, together with
+    an ``availability_evidence_url`` — a blanket default would manufacture
+    publication evidence out of nothing, and ``official_release`` is the single
+    label the strictest availability policy admits.
     """
+
+    if dated_rows_basis not in AVAILABILITY_BASES:
+        raise FrameContractError(
+            f"{key}: dated_rows_basis={dated_rows_basis!r} is not a known basis; "
+            f"allowed {sorted(AVAILABILITY_BASES)}"
+        )
+    if dated_rows_basis in EVIDENCED_BASES:
+        raise FrameContractError(
+            f"{key}: dated_rows_basis={dated_rows_basis!r} asserts publication evidence. "
+            "An evidenced basis must be set per row alongside availability_evidence_url, "
+            "never applied as a blanket default."
+        )
 
     if "observation_date" not in frame.columns or "value" not in frame.columns:
         raise FrameContractError(
@@ -145,28 +207,37 @@ def normalize_observation_frame(
     out["observation_date"] = pd.to_datetime(out["observation_date"], errors="raise")
     out["value"] = pd.to_numeric(out["value"], errors="coerce")
 
+    dated = pd.Series(False, index=out.index)
     if "available_date" in out.columns:
         out["available_date"] = pd.to_datetime(out["available_date"], errors="coerce")
+        dated = out["available_date"].notna()
 
-    if "availability_basis" not in out.columns:
-        # The provider declared no provenance at all. Two genuinely different
-        # situations, and conflating them is how unevidenced data sneaks through:
-        #   * a date exists but its evidence does not -> 'unverified'
-        #   * no date was ever supplied            -> 'unknown'
-        # 'unverified' without a date would be self-contradictory, so the date
-        # decides the label, not the caller's default.
-        has_dates = "available_date" in out.columns and out["available_date"].notna().any()
-        out["availability_basis"] = "unverified" if has_dates else "unknown"
+    # A blank cell counts as "no label" — a human leaving a cell empty is not an
+    # assertion of anything, and treating it as one would smuggle in evidence.
+    if "availability_basis" in out.columns:
+        basis = out["availability_basis"].astype("string").str.strip()
+        labeled = basis.notna() & basis.ne("")
+        out["availability_basis"] = basis
     else:
-        out["availability_basis"] = out["availability_basis"].astype("string").str.strip()
-        missing_basis = out["availability_basis"].isna()
-        if missing_basis.any():
-            out.loc[missing_basis, "availability_basis"] = default_basis
+        out["availability_basis"] = pd.Series(pd.NA, index=out.index, dtype="string")
+        labeled = pd.Series(False, index=out.index)
+
+    out.loc[~labeled & dated, "availability_basis"] = dated_rows_basis
+    out.loc[~labeled & ~dated, "availability_basis"] = "unknown"
 
     ordered = ["observation_date", "value"]
-    for column in ("available_date", "availability_basis", "availability_evidence_url"):
+    for column in (
+        "available_date",
+        "availability_basis",
+        "availability_evidence_url",
+        "availability_lag_days",
+    ):
         if column in out.columns:
             ordered.append(column)
     rest = [c for c in out.columns if c not in ordered]
 
-    return out[ordered + rest].sort_values("observation_date").reset_index(drop=True)
+    return (
+        out[ordered + rest]
+        .sort_values("observation_date", kind="stable")
+        .reset_index(drop=True)
+    )
