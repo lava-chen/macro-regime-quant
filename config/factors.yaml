@@ -1,51 +1,74 @@
-# v1 factor design. Provider-specific raw series live in data_catalog.yaml.
-# Every component must be computed only after its observation is actually available.
+# v1 factor design.
+# source = raw catalog key; transform is applied to the monthly as-of panel.
+# sign orients each component so larger values mean "more" of the named factor.
 
 china:
   growth:
     components:
-      industrial_production_yoy: {weight: 0.30, sign: 1}
-      retail_sales_yoy: {weight: 0.20, sign: 1}
-      fixed_asset_investment_yoy: {weight: 0.20, sign: 1}
-      pmi_new_orders: {weight: 0.30, sign: 1}
+      industrial_production_yoy:
+        {source: cn_industrial_production, transform: yoy, weight: 0.30, sign: 1}
+      retail_sales_yoy:
+        {source: cn_retail_sales, transform: yoy, weight: 0.20, sign: 1}
+      fixed_asset_investment_yoy:
+        {source: cn_fixed_asset_investment, transform: yoy, weight: 0.20, sign: 1}
+      pmi_new_orders:
+        {source: cn_pmi_new_orders, transform: distance_from_50, weight: 0.30, sign: 1}
     min_components: 3
   inflation:
     components:
-      cpi_yoy: {weight: 0.45, sign: 1}
-      core_cpi_yoy: {weight: 0.25, sign: 1}
-      ppi_yoy: {weight: 0.30, sign: 1}
+      cpi_yoy: {source: cn_cpi, transform: yoy, weight: 0.45, sign: 1}
+      core_cpi_yoy: {source: cn_core_cpi, transform: yoy, weight: 0.25, sign: 1}
+      ppi_yoy: {source: cn_ppi, transform: yoy, weight: 0.30, sign: 1}
     min_components: 2
   liquidity:
     components:
-      m1_yoy: {weight: 0.25, sign: 1}
-      m2_yoy: {weight: 0.15, sign: 1}
-      credit_impulse: {weight: 0.35, sign: 1}
-      cn_10y_yield_change: {weight: 0.25, sign: -1}
+      m1_yoy: {source: cn_m1, transform: yoy, weight: 0.25, sign: 1}
+      m2_yoy: {source: cn_m2, transform: yoy, weight: 0.15, sign: 1}
+      credit_impulse:
+        {source: cn_credit_impulse, transform: level, weight: 0.35, sign: 1}
+      cn_10y_yield_change:
+        {source: cn_10y, transform: diff, periods: 3, weight: 0.25, sign: -1}
     min_components: 2
 
 united_states:
   growth:
     components:
-      industrial_production_yoy: {weight: 0.20, sign: 1}
-      real_retail_sales_yoy: {weight: 0.20, sign: 1}
-      ism_new_orders: {weight: 0.25, sign: 1}
-      payroll_growth: {weight: 0.20, sign: 1}
-      unemployment_change: {weight: 0.15, sign: -1}
+      industrial_production_yoy:
+        {source: us_industrial_production, transform: yoy, weight: 0.22, sign: 1}
+      real_retail_sales_yoy:
+        {source: us_real_retail_sales, transform: yoy, weight: 0.18, sign: 1}
+      payroll_growth:
+        {source: us_payrolls, transform: yoy, weight: 0.20, sign: 1}
+      unemployment_change:
+        {source: us_unemployment, transform: diff, periods: 3, weight: 0.15, sign: -1}
+      cfnai:
+        {source: us_cfnai, transform: level, weight: 0.25, sign: 1}
     min_components: 3
+
   inflation:
     components:
-      core_cpi_yoy: {weight: 0.35, sign: 1}
-      core_pce_yoy: {weight: 0.40, sign: 1}
-      ppi_yoy: {weight: 0.25, sign: 1}
+      core_cpi_yoy:
+        {source: us_core_cpi, transform: yoy, weight: 0.35, sign: 1}
+      core_pce_yoy:
+        {source: us_core_pce, transform: yoy, weight: 0.40, sign: 1}
+      ppi_yoy:
+        {source: us_ppi_all_commodities, transform: yoy, weight: 0.25, sign: 1}
     min_components: 2
+
   real_rate:
     components:
-      us_10y_real: {weight: 0.60, sign: 1}
-      real_rate_3m_change: {weight: 0.40, sign: 1}
+      us_10y_real:
+        {source: us_10y_real, transform: level, weight: 0.60, sign: 1}
+      real_rate_3m_change:
+        {source: us_10y_real, transform: diff, periods: 3, weight: 0.40, sign: 1}
     min_components: 1
+
   liquidity:
     components:
-      m2_growth: {weight: 0.25, sign: 1}
-      financial_conditions: {weight: 0.40, sign: -1}
-      credit_spread: {weight: 0.35, sign: -1}
+      m2_growth:
+        {source: us_m2, transform: yoy, weight: 0.25, sign: 1}
+      financial_conditions:
+        {source: us_nfci, transform: level, weight: 0.40, sign: -1}
+      credit_spread:
+        {source: us_high_yield_oas, transform: level, weight: 0.35, sign: -1}
     min_components: 2
