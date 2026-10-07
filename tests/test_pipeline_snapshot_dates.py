@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -41,8 +42,6 @@ def test_monthly_panel_prefers_exact_available_date_over_fallback_lag(tmp_path: 
 
     old_cwd = Path.cwd()
     try:
-        import os
-
         os.chdir(project)
         panel = load_monthly_panel(
             catalog_path=catalog,
