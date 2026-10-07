@@ -126,6 +126,20 @@ series:
     frequency: daily
     release_lag_days: 0
 
+  us_long_treasury_proxy:
+    provider: yahoo
+    symbol: TLT
+    kind: market
+    frequency: daily
+    release_lag_days: 0
+
+  commodity_proxy:
+    provider: yahoo
+    symbol: DBC
+    kind: commodity
+    frequency: daily
+    release_lag_days: 0
+
   cny_usd:
     provider: yahoo
     symbol: CNY=X
