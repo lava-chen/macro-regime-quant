@@ -2,42 +2,68 @@
 
 A from-scratch, long-horizon macro regime research framework for China, the US, and global cross-asset markets.
 
-The project is intentionally built in layers:
+The project is intentionally layered:
 
-1. **Data layer** — reproducible, provenance-aware macro and market data.
-2. **Backtest layer** — point-in-time-safe portfolio simulation with execution lag and transaction costs.
-3. **Macro model** — later: growth/inflation/liquidity factors, AD-AS interpretation, regime classification.
-4. **Allocation layer** — later: China/US/global asset allocation and risk budgeting.
+1. **Data** — provenance-aware, release-date-aware macro and market data.
+2. **Backtest** — explicit execution lag, turnover and transaction costs.
+3. **Macro factors** — growth / inflation / liquidity / real-rate measurement.
+4. **Regimes** — interpretable rule baseline first, probabilistic models later.
+5. **Allocation** — China / US / global cross-asset mapping only after validation.
 
-## v0 scope
+## Current status
 
-This first version only establishes the two foundations that should not be rewritten every time the model evolves:
+### v0 foundation
+- data catalog and provider interfaces;
+- FRED / CSV / Yahoo adapters;
+- monthly point-in-time alignment contract;
+- transparent long-only backtest engine;
+- CAGR / vol / Sharpe / max drawdown / Calmar;
+- anti-look-ahead synthetic tests.
 
-- data catalog + provider interfaces;
-- a simple but explicit backtest engine and performance metrics.
+### v1 in progress
+- expanding, past-only z-scores;
+- China / US factor definitions;
+- four-regime Growth × Inflation baseline;
+- runnable US FRED pipeline.
+
+## Quick start
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev,data]"
+pytest -q
+
+python -m macro_regime_quant build-us-baseline \
+  --start 2000-01-01 \
+  --output data/processed/us
+```
+
+Outputs:
+
+```text
+data/processed/us/raw_monthly.csv
+data/processed/us/factors.csv
+data/processed/us/regimes.csv
+```
+
+## Important research limitation
+
+The runnable US baseline currently uses **latest-vintage FRED history plus explicit approximate release lags**. This is good for pipeline validation and learning, but not yet sufficient to claim historical trading performance because revised macro data can create vintage bias.
+
+Before strategy conclusions, revised US series move to ALFRED / publication vintages and China series move to frozen official release snapshots.
 
 ## Design principles
 
-- **No look-ahead by construction.** Signals are applied with an execution lag.
-- **Point-in-time first.** Macro observations need an `available_date`; a crude release lag is supported now, vintage data comes later.
-- **Frozen raw inputs are first-class.** CSV/Parquet snapshots are the reproducibility baseline even when live providers exist.
-- **Provider is not the model.** FRED / Yahoo / AKShare / official downloads are adapters behind a stable schema.
-- **Long horizon.** Default research frequency is monthly; target holding horizons are 3M/6M/12M.
+- No same-period signal execution.
+- Join macro information by `available_date`, not economic observation date.
+- Expanding/rolling statistics never use future observations.
+- Missing factor components are not silently treated as zero.
+- Factor weights remain transparent priors until walk-forward evidence justifies estimation.
+- Default horizon is monthly with 3M / 6M / 12M forward-return research.
 
-## Repository structure
-
-```text
-config/                 data and asset catalogs
-docs/                   data/backtest contracts
-src/macro_regime_quant/
-  data/                  schemas, catalog, providers
-  backtest/              engine and metrics
-tests/                   synthetic tests for leakage and accounting
-```
-
-## Planned v1
-
-- China growth/inflation/credit/liquidity factors;
-- US growth/inflation/real-rate/liquidity factors;
-- global USD/commodity/global-PMI transmission layer;
-- four-regime baseline, then HMM / Markov switching only after the rule model is validated.
+See:
+- `docs/data_sources.md`
+- `docs/backtest_contract.md`
+- `docs/factor_contract.md`
+- `docs/roadmap.md`
