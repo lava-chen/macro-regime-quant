@@ -6,26 +6,33 @@ china:
   growth:
     components:
       industrial_production_yoy:
-        {source: cn_industrial_production, transform: yoy, weight: 0.30, sign: 1}
+        {source: cn_industrial_production, transform: level, weight: 0.30, sign: 1}
       retail_sales_yoy:
-        {source: cn_retail_sales, transform: yoy, weight: 0.20, sign: 1}
-      fixed_asset_investment_yoy:
-        {source: cn_fixed_asset_investment, transform: yoy, weight: 0.20, sign: 1}
+        {source: cn_retail_sales, transform: level, weight: 0.20, sign: 1}
+      fixed_asset_investment_ytd_yoy:
+        {source: cn_fixed_asset_investment, transform: level, weight: 0.20, sign: 1}
       pmi_new_orders:
         {source: cn_pmi_new_orders, transform: distance_from_50, weight: 0.30, sign: 1}
     min_components: 3
+
   inflation:
     components:
-      cpi_yoy: {source: cn_cpi, transform: yoy, weight: 0.45, sign: 1}
-      core_cpi_yoy: {source: cn_core_cpi, transform: yoy, weight: 0.25, sign: 1}
-      ppi_yoy: {source: cn_ppi, transform: yoy, weight: 0.30, sign: 1}
+      cpi_yoy:
+        {source: cn_cpi, transform: level, weight: 0.45, sign: 1}
+      core_cpi_yoy:
+        {source: cn_core_cpi, transform: level, weight: 0.25, sign: 1}
+      ppi_yoy:
+        {source: cn_ppi, transform: level, weight: 0.30, sign: 1}
     min_components: 2
+
   liquidity:
     components:
-      m1_yoy: {source: cn_m1, transform: yoy, weight: 0.25, sign: 1}
-      m2_yoy: {source: cn_m2, transform: yoy, weight: 0.15, sign: 1}
-      credit_impulse:
-        {source: cn_credit_impulse, transform: level, weight: 0.35, sign: 1}
+      m1_yoy:
+        {source: cn_m1, transform: level, weight: 0.25, sign: 1}
+      m2_yoy:
+        {source: cn_m2, transform: level, weight: 0.15, sign: 1}
+      tsf_stock_yoy:
+        {source: cn_tsf_stock_yoy, transform: level, weight: 0.35, sign: 1}
       cn_10y_yield_change:
         {source: cn_10y, transform: diff, periods: 3, weight: 0.25, sign: -1}
     min_components: 2

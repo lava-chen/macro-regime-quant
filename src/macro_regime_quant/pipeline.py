@@ -45,8 +45,13 @@ def load_monthly_panel(
         spec = catalog[key]
         if spec.provider not in providers:
             raise KeyError(f"No provider registered for {spec.provider!r}")
+
         raw = providers[spec.provider].fetch(spec, start=None, end=end)
-        available = attach_available_date(raw, spec.release_lag_days)
+        available = (
+            raw
+            if "available_date" in raw.columns
+            else attach_available_date(raw, spec.release_lag_days)
+        )
         columns[key] = monthly_asof(available, start=start, end=end)
 
     return pd.DataFrame(columns).sort_index()
@@ -82,7 +87,9 @@ def build_country_factors(
 
         for component_name, component_cfg in factor_cfg["components"].items():
             components[component_name] = _component_series(
-                raw_panel, component_cfg, min_z_history=min_z_history
+                raw_panel,
+                component_cfg,
+                min_z_history=min_z_history,
             )
             weights[component_name] = float(component_cfg.get("weight", 1.0))
 
@@ -108,6 +115,23 @@ def required_sources(country_cfg: dict[str, Any]) -> list[str]:
     return sorted(keys)
 
 
+def _build_country_baseline(
+    country_key: str,
+    catalog_path: str | Path,
+    factor_path: str | Path,
+    start: str,
+    end: str | None,
+    min_z_history: int,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+    end = end or pd.Timestamp.today().strftime("%Y-%m-%d")
+    factor_cfg = load_factor_config(factor_path)[country_key]
+    sources = required_sources(factor_cfg)
+    raw = load_monthly_panel(catalog_path, sources, start=start, end=end)
+    factors = build_country_factors(raw, factor_cfg, min_z_history=min_z_history)
+    regimes = classify_regime(factors["growth"], factors["inflation"])
+    return raw, factors, regimes
+
+
 def build_us_baseline(
     catalog_path: str | Path = "config/data_catalog.yaml",
     factor_path: str | Path = "config/factors.yaml",
@@ -121,10 +145,30 @@ def build_us_baseline(
     for pipeline validation, not yet a publication-quality historical trading test.
     """
 
-    end = end or pd.Timestamp.today().strftime("%Y-%m-%d")
-    factor_cfg = load_factor_config(factor_path)["united_states"]
-    sources = required_sources(factor_cfg)
-    raw = load_monthly_panel(catalog_path, sources, start=start, end=end)
-    factors = build_country_factors(raw, factor_cfg, min_z_history=min_z_history)
-    regimes = classify_regime(factors["growth"], factors["inflation"])
-    return raw, factors, regimes
+    return _build_country_baseline(
+        "united_states",
+        catalog_path,
+        factor_path,
+        start,
+        end,
+        min_z_history,
+    )
+
+
+def build_china_baseline(
+    catalog_path: str | Path = "config/data_catalog.yaml",
+    factor_path: str | Path = "config/factors.yaml",
+    start: str = "2005-01-01",
+    end: str | None = None,
+    min_z_history: int = 36,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+    """Build China factors from frozen official release snapshots."""
+
+    return _build_country_baseline(
+        "china",
+        catalog_path,
+        factor_path,
+        start,
+        end,
+        min_z_history,
+    )

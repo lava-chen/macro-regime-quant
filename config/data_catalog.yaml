@@ -147,5 +147,89 @@ series:
     frequency: daily
     release_lag_days: 0
 
-# China macro will enter through frozen official snapshots first.
-# See docs/data_sources.md; canonical live adapters come after snapshot validation.
+
+  cn_industrial_production:
+    provider: csv
+    symbol: china/industrial_production_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 18
+    notes: "NBS reported YoY growth; exact available_date in snapshot overrides fallback lag."
+
+  cn_retail_sales:
+    provider: csv
+    symbol: china/retail_sales_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 18
+    notes: "NBS reported YoY growth."
+
+  cn_fixed_asset_investment:
+    provider: csv
+    symbol: china/fixed_asset_investment_ytd_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 18
+    notes: "NBS year-to-date YoY growth; not a level series."
+
+  cn_pmi_new_orders:
+    provider: csv
+    symbol: china/pmi_new_orders.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 1
+    notes: "NBS manufacturing PMI new-orders diffusion index."
+
+  cn_cpi:
+    provider: csv
+    symbol: china/cpi_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 10
+
+  cn_core_cpi:
+    provider: csv
+    symbol: china/core_cpi_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 10
+
+  cn_ppi:
+    provider: csv
+    symbol: china/ppi_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 10
+
+  cn_m1:
+    provider: csv
+    symbol: china/m1_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 15
+
+  cn_m2:
+    provider: csv
+    symbol: china/m2_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 15
+
+  cn_tsf_stock_yoy:
+    provider: csv
+    symbol: china/tsf_stock_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 15
+    notes: "PBOC aggregate financing to the real economy stock YoY growth."
+
+  cn_10y:
+    provider: csv
+    symbol: china/10y_government_yield.csv
+    kind: rate
+    frequency: daily
+    release_lag_days: 0
+    notes: "Government bond yield snapshot from official/interbank market source."
+
+# China macro uses frozen official snapshots first.
+# Exact per-row available_date is preferred over fallback release lags.
