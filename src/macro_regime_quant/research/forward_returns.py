@@ -38,7 +38,7 @@ def regime_return_summary(
     """Summarize forward-return distributions conditional on the macro regime."""
 
     if not isinstance(returns.columns, pd.MultiIndex):
-        raise ValueError("returns must have MultiIndex columns from forward_returns()")
+        raise TypeError("returns must have MultiIndex columns from forward_returns()")
 
     joined = returns.copy()
     joined["__regime__"] = regimes.reindex(joined.index)
