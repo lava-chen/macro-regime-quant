@@ -76,32 +76,28 @@ def load_monthly_panel(
 
         raw = providers[spec.provider].fetch(spec, start=None, end=end)
 
-        # One normalization path for every provider. This used to be a 23-branch
-        # block that re-implemented the same decision inline, which is how the
-        # provider route and the contract route drifted apart.
+        # Whether the *provider* supplied availability dates must be decided
+        # before normalization: normalize always materialises an
+        # availability_basis column, so asking afterwards is always true. That
+        # sent every dateless provider down the wrong branch, leaving
+        # available_date as NaT and the panel silently empty.
+        provider_supplied_dates = "available_date" in raw.columns
         raw = normalize_observation_frame(raw, key=key)
 
-        if "available_date" not in raw.columns:
-            if "availability_basis" not in raw.columns:
-                raw = attach_available_date(raw, spec.release_lag_days)
-            else:
-                # Provider spoke the provenance vocabulary but supplied no dates.
-                # Only a declared fixed_lag may be reconstructed from the catalog;
-                # anything else would require inventing a publication date.
-                raw = raw.copy()
-                raw["available_date"] = pd.NaT
-                lagged = raw["availability_basis"].eq("fixed_lag")
-                if lagged.any():
-                    raw.loc[lagged, "available_date"] = raw.loc[lagged, "observation_date"] + (
-                        pd.to_timedelta(spec.release_lag_days, unit="D")
-                    )
-                date_required = ~raw["availability_basis"].isin({"unknown", "fixed_lag"})
-                if date_required.any():
-                    raise ValueError(
-                        f"{key} has an availability_basis that requires an available_date"
-                    )
+        if not provider_supplied_dates:
+            # The provider knows nothing about when its values became knowable.
+            # Reconstruct from the catalogue's release lag and label the rows
+            # accordingly: attach_available_date marks them fixed_lag. A row
+            # claiming evidence while carrying no date is a contradiction, not a
+            # gap, and must not be papered over.
+            unsupported = set(raw["availability_basis"]) - {"unknown", "fixed_lag"}
+            if unsupported:
+                raise ValueError(
+                    f"{key}: availability_basis {sorted(unsupported)} requires an "
+                    "available_date, but the provider supplied none"
+                )
+            raw = attach_available_date(raw, spec.release_lag_days)
         else:
-            # Dates are present, so rows carrying one must already be labelled.
             raw = raw.copy()
             raw["available_date"] = pd.to_datetime(raw["available_date"], errors="coerce")
             unlabelled = raw["available_date"].notna() & raw["availability_basis"].eq("unknown")
