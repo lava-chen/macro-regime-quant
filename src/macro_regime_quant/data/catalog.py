@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import difflib
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from .models import CATALOG_FIELDS, SeriesSpec
+
+#: Top-level keys allowed alongside ``series`` for human-facing catalog metadata.
+CATALOG_METADATA_KEYS: frozenset[str] = frozenset({"version", "description", "generated_at"})
 
 
 class CatalogError(ValueError):
@@ -49,6 +53,14 @@ def _build_spec(key: str, cfg: Any, file_path: Path) -> SeriesSpec:
             f"entry must be a mapping, got {type(cfg).__name__}", path=file_path, series_key=key
         )
 
+    if "key" in cfg:
+        raise CatalogError(
+            f"the mapping key {key!r} already IS this series' key; delete the 'key:' "
+            "field (or rename the mapping key).",
+            path=file_path,
+            series_key=key,
+        )
+
     unknown = set(cfg) - CATALOG_FIELDS
     if unknown:
         suggestions = _suggest(sorted(unknown), CATALOG_FIELDS)
@@ -65,17 +77,22 @@ def _build_spec(key: str, cfg: Any, file_path: Path) -> SeriesSpec:
             f"missing required field(s) {sorted(missing)}", path=file_path, series_key=key
         )
 
+    if "release_lag_days" in cfg and not isinstance(cfg["release_lag_days"], int):
+        raw_lag = cfg["release_lag_days"]
+        raise CatalogError(
+            f"release_lag_days must be an integer number of days, got {raw_lag!r} "
+            f"({type(raw_lag).__name__}). Quote-free YAML: a bare 10 is an int, '10' is not.",
+            path=file_path,
+            series_key=key,
+        )
+
     try:
         return SeriesSpec(key=key, **cfg)
-    except TypeError as exc:  # pragma: no cover - guarded by the checks above
-        raise CatalogError(str(exc), path=file_path, series_key=key) from exc
-    except ValueError as exc:
+    except (TypeError, ValueError) as exc:
         raise CatalogError(str(exc), path=file_path, series_key=key) from exc
 
 
 def _suggest(unknown: list[str], valid: frozenset[str] | set[str]) -> list[str]:
-    import difflib
-
     out: list[str] = []
     for name in unknown:
         close = difflib.get_close_matches(name, sorted(valid), n=1, cutoff=0.6)
@@ -94,10 +111,11 @@ def load_catalog(path: str | Path) -> dict[str, SeriesSpec]:
     file_path = Path(path)
     raw = _read_catalog(file_path)
 
-    unknown_top = set(raw) - {"series"}
+    unknown_top = set(raw) - {"series"} - CATALOG_METADATA_KEYS
     if unknown_top:
         raise CatalogError(
-            f"unknown top-level section(s) {sorted(unknown_top)}; expected only 'series'",
+            f"unknown top-level section(s) {sorted(unknown_top)}; "
+            f"allowed: 'series' plus metadata {sorted(CATALOG_METADATA_KEYS)}",
             path=file_path,
         )
 
