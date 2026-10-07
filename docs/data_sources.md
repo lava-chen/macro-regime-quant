@@ -40,12 +40,15 @@ Each series lives under data/raw/china/ as:
 Preferred CSV schema:
 
 ```csv
-observation_date,available_date,value
-2026-08-31,2026-09-15,5.2
+observation_date,available_date,availability_basis,availability_evidence_url,value
+2026-08-31,2026-09-15,official_release,https://www.stats.gov.cn/sj/zxfb/...,5.2
+2026-07-31,,unknown,,5.0
 ```
 
 - observation_date: economic period the number refers to.
-- available_date: date the market could actually know the number.
+- available_date: actual release date only when confirmed; otherwise blank for unknown dates.
+- availability_basis: row-level evidence class (`official_release`, `official_schedule`, `fixed_lag`, `unverified`, or `unknown`).
+- availability_evidence_url: row-level official release/calendar URL for documented dates.
 - value: the reported numeric value.
 
 The metadata sidecar must include at least:
@@ -59,6 +62,7 @@ unit: percent_yoy
 downloaded_at: 2026-10-07T13:30:00+08:00
 reported_as: yoy_percent
 revision_policy: frozen_release_snapshot
+availability_lag_days: 18 # only needed when rows use fixed_lag
 ```
 
 Validate with:
@@ -68,7 +72,9 @@ python -m macro_regime_quant validate-snapshot \
   data/raw/china/industrial_production_yoy.csv
 ```
 
-Exact per-row available_date always overrides the fallback lag in data_catalog.yaml. The fallback exists only for incomplete historical snapshots.
+`official_release` means the linked release itself supports the date. `official_schedule` records a planned date and is not proof of publication. `fixed_lag` is an estimate reproducible from `availability_lag_days`. `unknown` rows keep `available_date` empty. A dated legacy row without evidence is marked `unverified` until checked.
+
+The China pipeline defaults to `official_release_only`. Broader runs must explicitly select `include_schedule`, `include_estimates`, or `include_unverified`; keep that policy visible in the research report. A row marked `unknown` is never assigned the catalog fallback lag.
 
 ## Important China transformation rule
 
