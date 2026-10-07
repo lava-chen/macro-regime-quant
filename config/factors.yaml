@@ -1,0 +1,51 @@
+# v1 factor design. Provider-specific raw series live in data_catalog.yaml.
+# Every component must be computed only after its observation is actually available.
+
+china:
+  growth:
+    components:
+      industrial_production_yoy: {weight: 0.30, sign: 1}
+      retail_sales_yoy: {weight: 0.20, sign: 1}
+      fixed_asset_investment_yoy: {weight: 0.20, sign: 1}
+      pmi_new_orders: {weight: 0.30, sign: 1}
+    min_components: 3
+  inflation:
+    components:
+      cpi_yoy: {weight: 0.45, sign: 1}
+      core_cpi_yoy: {weight: 0.25, sign: 1}
+      ppi_yoy: {weight: 0.30, sign: 1}
+    min_components: 2
+  liquidity:
+    components:
+      m1_yoy: {weight: 0.25, sign: 1}
+      m2_yoy: {weight: 0.15, sign: 1}
+      credit_impulse: {weight: 0.35, sign: 1}
+      cn_10y_yield_change: {weight: 0.25, sign: -1}
+    min_components: 2
+
+united_states:
+  growth:
+    components:
+      industrial_production_yoy: {weight: 0.20, sign: 1}
+      real_retail_sales_yoy: {weight: 0.20, sign: 1}
+      ism_new_orders: {weight: 0.25, sign: 1}
+      payroll_growth: {weight: 0.20, sign: 1}
+      unemployment_change: {weight: 0.15, sign: -1}
+    min_components: 3
+  inflation:
+    components:
+      core_cpi_yoy: {weight: 0.35, sign: 1}
+      core_pce_yoy: {weight: 0.40, sign: 1}
+      ppi_yoy: {weight: 0.25, sign: 1}
+    min_components: 2
+  real_rate:
+    components:
+      us_10y_real: {weight: 0.60, sign: 1}
+      real_rate_3m_change: {weight: 0.40, sign: 1}
+    min_components: 1
+  liquidity:
+    components:
+      m2_growth: {weight: 0.25, sign: 1}
+      financial_conditions: {weight: 0.40, sign: -1}
+      credit_spread: {weight: 0.35, sign: -1}
+    min_components: 2
