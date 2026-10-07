@@ -24,7 +24,9 @@ The project is intentionally layered:
 - expanding, past-only z-scores;
 - China / US factor definitions;
 - four-regime Growth × Inflation baseline;
-- runnable US FRED pipeline.
+- runnable US FRED pipeline;
+- China official snapshot contract with exact release dates;
+- regime-conditioned 3M / 6M / 12M cross-asset research.
 
 ## Quick start
 
@@ -41,6 +43,13 @@ python -m macro_regime_quant build-us-baseline \
 python -m macro_regime_quant analyze-us-regimes \
   --start 2000-01-01 \
   --output reports/us_regimes
+
+python -m macro_regime_quant validate-snapshot \
+  data/raw/china/industrial_production_yoy.csv
+
+python -m macro_regime_quant build-china-baseline \
+  --start 2005-01-01 \
+  --output data/processed/china
 ```
 
 Research outputs include:
