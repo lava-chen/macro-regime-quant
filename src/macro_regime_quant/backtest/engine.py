@@ -40,7 +40,7 @@ def _validate_weights(weights: pd.DataFrame, allow_cash: bool) -> None:
 def run_backtest(
     prices: pd.DataFrame,
     target_weights: pd.DataFrame,
-    config: BacktestConfig = BacktestConfig(),
+    config: BacktestConfig | None = None,
 ) -> BacktestResult:
     """Run a transparent close-to-next-period backtest.
 
@@ -53,6 +53,7 @@ def run_backtest(
     This simple contract is intentionally conservative and easy to audit.
     """
 
+    config = config or BacktestConfig()
     prices = prices.sort_index().astype(float)
     target_weights = target_weights.sort_index().reindex(columns=prices.columns, fill_value=0.0)
     _validate_weights(target_weights, config.allow_cash)
