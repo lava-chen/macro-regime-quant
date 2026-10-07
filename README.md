@@ -1,36 +1,41 @@
 # macro-regime-quant
 
-A from-scratch, long-horizon macro regime research framework for China, the US, and global cross-asset markets.
+A point-in-time-safe financial research platform being built from first principles for China, the US, and global markets.
 
-The project is intentionally layered:
+The macro regime model remains the first production research engine, but the repository now has explicit boundaries for five engines:
 
-1. **Data** — provenance-aware, release-date-aware macro and market data.
-2. **Backtest** — explicit execution lag, turnover and transaction costs.
-3. **Macro factors** — growth / inflation / liquidity / real-rate measurement.
-4. **Regimes** — interpretable rule baseline first, probabilistic models later.
-5. **Allocation** — China / US / global cross-asset mapping only after validation.
+1. **Macro** — Growth / Inflation / Liquidity / Real Rate and regime research.
+2. **Valuation** — company fundamentals, DCF / Reverse DCF, and business-model-specific valuation.
+3. **Flow** — observed and inferred capital flows with stock-flow reconciliation.
+4. **Risk** — planned portfolio and market risk layer.
+5. **Portfolio** — planned allocation layer that consumes outputs from the other engines.
+
+All engines share the same entity identities, point-in-time data discipline, backtest utilities, and model-versioning principles.
 
 ## Current status
 
-### v0 foundation
-- data catalog and provider interfaces;
-- FRED / CSV / Yahoo adapters;
-- monthly point-in-time alignment contract;
-- transparent long-only backtest engine;
-- CAGR / vol / Sharpe / max drawdown / Calmar;
-- anti-look-ahead synthetic tests.
-
-### v1 in progress
-- expanding, past-only z-scores;
+### Macro v1
+- FRED / CSV / Yahoo data layer;
+- observation-date / available-date separation;
+- expanding past-only z-scores;
 - China / US factor definitions;
-- four-regime Growth × Inflation baseline;
+- Growth x Inflation four-regime baseline;
 - runnable US FRED pipeline;
 - China official snapshot contract with row-level release-date evidence;
 - regime-conditioned 3M / 6M / 12M cross-asset research.
 
+### Platform v0
+- stable Company and Security entity IDs;
+- point-in-time company-fundamental observation contract;
+- FCFF DCF and Reverse DCF baseline;
+- valuation routing contract for banks / insurers / REITs / commodity companies;
+- observed-versus-inferred capital-flow evidence model;
+- stock-flow reconciliation and valuation-adjusted AUM-flow utility;
+- transparent confidence-adjusted cross-engine signal composition.
+
 ## Quick start
 
-```bash
+~~~bash
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e ".[dev,data]"
@@ -50,43 +55,59 @@ python -m macro_regime_quant validate-snapshot \
 python -m macro_regime_quant build-china-baseline \
   --start 2005-01-01 \
   --output data/processed/china
-```
+~~~
 
-The China baseline admits only `availability_basis=official_release` rows by default. Choose the corresponding `--availability-policy` explicitly to include official schedules, fixed-lag estimates, or unverified legacy dates, and report that choice with any results.
+The China baseline admits only availability_basis=official_release rows by default. Broader availability policies must be selected explicitly and reported with any results.
 
-Research outputs include:
-
-```text
-data/processed/us/raw_monthly.csv
-data/processed/us/factors.csv
-data/processed/us/regimes.csv
-data/processed/us/run_metadata.yaml
-
-reports/us_regimes/state_history.csv
-reports/us_regimes/asset_prices.csv
-reports/us_regimes/forward_returns.csv
-reports/us_regimes/regime_return_summary.csv
-```
-
-The regime research currently compares SPY, QQQ, TLT, GLD and DBC over 3M / 6M / 12M forward horizons.
-
-## Important research limitation
-
-The runnable US baseline currently uses **latest-vintage FRED history plus explicit approximate release lags**. This is good for pipeline validation and learning, but not yet sufficient to claim historical trading performance because revised macro data can create vintage bias.
-
-Before strategy conclusions, revised US series move to ALFRED / publication vintages and China series move to frozen official release snapshots.
-
-## Design principles
+## Research principles
 
 - No same-period signal execution.
-- Join macro information by `available_date`, not economic observation date.
+- Join information by when it was knowable, not only by the period it describes.
+- Company fundamentals use period_end plus available_date.
 - Expanding/rolling statistics never use future observations.
-- Missing factor components are not silently treated as zero.
-- Factor weights remain transparent priors until walk-forward evidence justifies estimation.
-- Default horizon is monthly with 3M / 6M / 12M forward-return research.
+- Missing inputs are not silently treated as zero.
+- Observed capital flows and inferred flows remain distinguishable.
+- A ticker is not a canonical entity identifier.
+- Valuation methods are selected by business model rather than forced through one formula.
+- A combined score never replaces the underlying inspectable engine outputs.
+- Research models do not become production models without point-in-time and walk-forward validation.
+
+## Architecture
+
+The intended long-run shape is:
+
+~~~text
+Market / Macro / Fundamental / Ownership Data
+                    |
+             Shared Entity + PIT Layer
+                    |
+        +-----------+-----------+
+        |           |           |
+      Macro     Valuation      Flow
+        |           |           |
+        +-----------+-----------+
+                    |
+                  Risk
+                    |
+                Portfolio
+                    |
+            Signals / Reports
+~~~
+
+Deployment is expected to separate concerns:
+
+- GitHub: source, CI, model versions;
+- Supabase/Postgres: canonical observations, entities, runs and signals;
+- object storage: raw snapshots and large outputs;
+- worker: ingestion / research computation;
+- Vercel: dashboard / API;
+- Notion: human research, conclusions and model-change proposals.
 
 See:
-- `docs/data_sources.md`
-- `docs/backtest_contract.md`
-- `docs/factor_contract.md`
-- `docs/roadmap.md`
+- docs/platform_architecture.md
+- docs/data_sources.md
+- docs/backtest_contract.md
+- docs/factor_contract.md
+- docs/valuation_contract.md
+- docs/flow_contract.md
+- docs/roadmap.md
