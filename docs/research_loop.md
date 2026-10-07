@@ -95,6 +95,46 @@ FRED price series are used instead of Yahoo on purpose: yfinance rate-limits
 hard from shared IPs, and a research loop that breaks on a Tuesday is not a
 research loop.
 
+## Making the inputs truly point-in-time
+
+The loop is honest about *alignment* — the panel it hands you contains only what
+was knowable at each month-end, and forward returns start afterwards. It cannot
+fix the *inputs*. A series pulled from FRED today still carries today's revised
+values, so a 2015 backtest is reading numbers that did not exist in 2015.
+
+Pointing the catalogue at `alfred` is only half the answer, and on its own it
+can be worse than useless: one pull with today's vintage, labelled `alfred`, is
+still today's knowledge applied to the past. The missing piece is an archive.
+
+```bash
+uv run macro-regime-quant snapshot-vintages \
+    --series us_core_cpi --start 2020-01-01 --step-months 3
+```
+
+This stores one snapshot per series per quarter under `data/vintages/`. Re-runs
+skip what already exists, so the archive grows cheaply. Reading it is then
+strictly historical: for a backtest dated *t*, the newest snapshot at or before
+*t* is used, and if the archive does not reach back that far the read returns
+nothing rather than quietly substituting current data.
+
+The difference is visible. For CPI's 2021-06 observation:
+
+| backtest dated | value visible then |
+|---|---|
+| 2021-10 | 270.981 |
+| 2023-01 | 270.955 |
+| 2024-01 | 270.559 |
+
+A single FRED fetch returns 270.559 for all three rows and calls it history.
+
+**Only series whose catalogue provider is `alfred` are snapshotted.** A series
+that is never revised gains nothing, and pulling it anyway would cost minutes
+for an identical result. Switching a catalogue entry from `fred` to `alfred` is
+a deliberate, separate step.
+
+An archive is only as honest as its oldest snapshot. A backtest starting before
+the archive begins has no point-in-time data and should not be run.
+
 ## After a signal earns its place
 
 Only once the IC is worth something, move to sizing and costs:
