@@ -1,12 +1,44 @@
-# v0 catalog: examples and priorities, not a claim that every live provider is permanent.
+# Research catalog. Release lags are conservative v1 approximations.
+# For revised macro series, latest-vintage FRED history is NOT publication-quality
+# point-in-time history; use ALFRED/official vintages before claiming historical alpha.
 series:
-  us_real_gdp:
+  us_industrial_production:
     provider: fred
-    symbol: GDPC1
+    symbol: INDPRO
     kind: macro
-    frequency: quarterly
-    release_lag_days: 30
-    notes: "US real GDP. Fixed lag is only a v0 approximation; use actual/vintage releases later."
+    frequency: monthly
+    release_lag_days: 18
+    notes: "Industrial Production Index; approximate mid-month release lag."
+
+  us_real_retail_sales:
+    provider: fred
+    symbol: RRSFS
+    kind: macro
+    frequency: monthly
+    release_lag_days: 18
+    notes: "Real Retail and Food Services Sales; latest-vintage baseline."
+
+  us_payrolls:
+    provider: fred
+    symbol: PAYEMS
+    kind: macro
+    frequency: monthly
+    release_lag_days: 7
+
+  us_unemployment:
+    provider: fred
+    symbol: UNRATE
+    kind: macro
+    frequency: monthly
+    release_lag_days: 7
+
+  us_cfnai:
+    provider: fred
+    symbol: CFNAI
+    kind: macro
+    frequency: monthly
+    release_lag_days: 25
+    notes: "Chicago Fed National Activity Index; broad activity proxy."
 
   us_cpi:
     provider: fred
@@ -14,11 +46,24 @@ series:
     kind: macro
     frequency: monthly
     release_lag_days: 14
-    notes: "US CPI. Replace fixed lag with publication calendar in v1."
 
   us_core_cpi:
     provider: fred
     symbol: CPILFESL
+    kind: macro
+    frequency: monthly
+    release_lag_days: 14
+
+  us_core_pce:
+    provider: fred
+    symbol: PCEPILFE
+    kind: macro
+    frequency: monthly
+    release_lag_days: 30
+
+  us_ppi_all_commodities:
+    provider: fred
+    symbol: PPIACO
     kind: macro
     frequency: monthly
     release_lag_days: 14
@@ -36,6 +81,29 @@ series:
     kind: rate
     frequency: daily
     release_lag_days: 0
+
+  us_m2:
+    provider: fred
+    symbol: M2SL
+    kind: macro
+    frequency: monthly
+    release_lag_days: 28
+
+  us_nfci:
+    provider: fred
+    symbol: NFCI
+    kind: rate
+    frequency: weekly
+    release_lag_days: 7
+    notes: "Chicago Fed NFCI. Higher = tighter financial conditions."
+
+  us_high_yield_oas:
+    provider: fred
+    symbol: BAMLH0A0HYM2
+    kind: rate
+    frequency: daily
+    release_lag_days: 0
+    notes: "ICE BofA US High Yield Index option-adjusted spread."
 
   sp500_proxy:
     provider: yahoo
@@ -65,5 +133,5 @@ series:
     frequency: daily
     release_lag_days: 0
 
-# China macro should initially enter as frozen official snapshots in data/raw/.
-# Preferred source hierarchy is documented in docs/data_sources.md.
+# China macro will enter through frozen official snapshots first.
+# See docs/data_sources.md; canonical live adapters come after snapshot validation.

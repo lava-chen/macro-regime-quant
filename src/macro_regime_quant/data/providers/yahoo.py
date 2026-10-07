@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .base import DataProvider
 from ..models import SeriesSpec
+from .base import DataProvider
 
 
 class YahooProvider(DataProvider):
@@ -12,7 +12,12 @@ class YahooProvider(DataProvider):
     Good for prototyping, not the final source of truth for institutional-grade tests.
     """
 
-    def fetch(self, spec: SeriesSpec, start: str | None = None, end: str | None = None) -> pd.DataFrame:
+    def fetch(
+        self,
+        spec: SeriesSpec,
+        start: str | None = None,
+        end: str | None = None,
+    ) -> pd.DataFrame:
         try:
             import yfinance as yf
         except ImportError as exc:

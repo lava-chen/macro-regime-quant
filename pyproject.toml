@@ -13,6 +13,9 @@ dependencies = [
   "pyyaml>=6.0",
 ]
 
+[project.scripts]
+macro-regime-quant = "macro_regime_quant.cli:main"
+
 [project.optional-dependencies]
 data = [
   "yfinance>=0.2.50",
