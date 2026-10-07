@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mrq-research"
+version = "0.1.0"
+description = "Backtesting and regime-conditional forward-return research"
+requires-python = ">=3.11"
+dependencies = [
+  "mrq-core",
+  "mrq-data",
+  "mrq-engines",
+  "numpy>=2.0",
+  "pandas>=2.2",
+]
+
+[tool.uv.sources]
+mrq-core = { workspace = true }
+mrq-data = { workspace = true }
+mrq-engines = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mrq_research"]
