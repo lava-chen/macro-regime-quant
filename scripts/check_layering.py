@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Fail the build if a package imports from a layer above it.
 
 The dependency direction is the whole point of the workspace layout:
