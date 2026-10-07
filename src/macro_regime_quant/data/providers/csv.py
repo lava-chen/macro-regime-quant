@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from .base import DataProvider
 from ..models import SeriesSpec
+from .base import DataProvider
 
 
 class CsvProvider(DataProvider):
@@ -14,7 +14,12 @@ class CsvProvider(DataProvider):
     def __init__(self, root: str | Path = "data/raw") -> None:
         self.root = Path(root)
 
-    def fetch(self, spec: SeriesSpec, start: str | None = None, end: str | None = None) -> pd.DataFrame:
+    def fetch(
+        self,
+        spec: SeriesSpec,
+        start: str | None = None,
+        end: str | None = None,
+    ) -> pd.DataFrame:
         path = self.root / spec.symbol
         df = pd.read_csv(path)
         required = {"observation_date", "value"}
