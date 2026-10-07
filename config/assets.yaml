@@ -1,0 +1,10 @@
+# Initial long-horizon cross-asset universe. Symbols are provider-specific.
+assets:
+  US_EQUITY: SPY
+  US_GROWTH: QQQ
+  GOLD: GLD
+  US_LONG_TREASURY: TLT
+  COMMODITY: DBC
+  CN_LARGE_CAP_PROXY: ASHR
+  CN_TECH_PROXY: KWEB
+  CN_HK_PROXY: MCHI
