@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mrq-engines"
+version = "0.1.0"
+description = "Macro, valuation, flow and signal research engines"
+requires-python = ">=3.11"
+dependencies = [
+  "mrq-core",
+  "mrq-data",
+  "numpy>=2.0",
+  "pandas>=2.2",
+  "pyyaml>=6.0",
+]
+
+[tool.uv.sources]
+mrq-core = { workspace = true }
+mrq-data = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mrq_engines"]
