@@ -65,6 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
     research.add_argument("--output", default="reports/us_regimes")
     research.add_argument("--min-z-history", type=int, default=36)
 
+
     test = sub.add_parser(
         "test-idea",
         help="Evaluate a signal file against forward returns and report IC diagnostics",
@@ -90,6 +91,25 @@ def build_parser() -> argparse.ArgumentParser:
         default="all",
         help="all | official_release_only | include_schedule | include_estimates | include_unverified",
     )
+    archive = sub.add_parser(
+        "snapshot-vintages",
+        help="Capture ALFRED vintages for named series so a backtest can be truly point-in-time",
+    )
+    archive.add_argument(
+        "--series",
+        required=True,
+        help="Comma-separated catalogue keys to snapshot. Use the FRED-backed ones.",
+    )
+    archive.add_argument("--start", default="2000-01-01")
+    archive.add_argument("--end", default=None)
+    archive.add_argument(
+        "--step-months",
+        type=int,
+        default=3,
+        help="Months between captured vintages (3 = quarterly).",
+    )
+    archive.add_argument("--catalog", default="config/data_catalog.yaml")
+    archive.add_argument("--root", default="data/vintages")
 
     return parser
 
