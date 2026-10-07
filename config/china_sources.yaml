@@ -1,0 +1,66 @@
+# Canonical owners and snapshot targets for the China v1 measurement model.
+# Portal URLs are intentionally stable entry points; each .meta.yaml should record
+# the exact release/download URL used for that frozen file.
+
+owners:
+  nbs:
+    name: National Bureau of Statistics of China
+    portal: https://data.stats.gov.cn/
+  pboc:
+    name: People's Bank of China
+    portal: https://www.pbc.gov.cn/
+  china_money:
+    name: China Foreign Exchange Trade System / National Interbank Funding Center
+    portal: https://www.chinamoney.com.cn/
+  customs:
+    name: General Administration of Customs
+    portal: https://online.customs.gov.cn/
+  safe:
+    name: State Administration of Foreign Exchange
+    portal: https://www.safe.gov.cn/safe/tjsj1/index.html
+
+snapshots:
+  cn_industrial_production:
+    owner: nbs
+    file: china/industrial_production_yoy.csv
+    reported_as: yoy_percent
+  cn_retail_sales:
+    owner: nbs
+    file: china/retail_sales_yoy.csv
+    reported_as: yoy_percent
+  cn_fixed_asset_investment:
+    owner: nbs
+    file: china/fixed_asset_investment_ytd_yoy.csv
+    reported_as: ytd_yoy_percent
+  cn_pmi_new_orders:
+    owner: nbs
+    file: china/pmi_new_orders.csv
+    reported_as: diffusion_index
+  cn_cpi:
+    owner: nbs
+    file: china/cpi_yoy.csv
+    reported_as: yoy_percent
+  cn_core_cpi:
+    owner: nbs
+    file: china/core_cpi_yoy.csv
+    reported_as: yoy_percent
+  cn_ppi:
+    owner: nbs
+    file: china/ppi_yoy.csv
+    reported_as: yoy_percent
+  cn_m1:
+    owner: pboc
+    file: china/m1_yoy.csv
+    reported_as: yoy_percent
+  cn_m2:
+    owner: pboc
+    file: china/m2_yoy.csv
+    reported_as: yoy_percent
+  cn_tsf_stock_yoy:
+    owner: pboc
+    file: china/tsf_stock_yoy.csv
+    reported_as: yoy_percent
+  cn_10y:
+    owner: china_money
+    file: china/10y_government_yield.csv
+    reported_as: percent
