@@ -4,8 +4,8 @@ from urllib.parse import quote
 
 import pandas as pd
 
-from .base import DataProvider
 from ..models import SeriesSpec
+from .base import DataProvider
 
 
 class FredProvider(DataProvider):
@@ -17,7 +17,12 @@ class FredProvider(DataProvider):
 
     BASE = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}"
 
-    def fetch(self, spec: SeriesSpec, start: str | None = None, end: str | None = None) -> pd.DataFrame:
+    def fetch(
+        self,
+        spec: SeriesSpec,
+        start: str | None = None,
+        end: str | None = None,
+    ) -> pd.DataFrame:
         url = self.BASE.format(quote(spec.symbol))
         df = pd.read_csv(url)
         if df.shape[1] != 2:
