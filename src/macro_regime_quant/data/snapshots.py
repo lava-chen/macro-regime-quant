@@ -6,6 +6,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from .frame import AVAILABILITY_BASES
+
 REQUIRED_METADATA = {
     "series_key",
     "source_name",
@@ -16,13 +18,14 @@ REQUIRED_METADATA = {
     "reported_as",
     "revision_policy",
 }
-AVAILABILITY_BASES = {
-    "official_release",
-    "official_schedule",
-    "fixed_lag",
-    "unverified",
-    "unknown",
-}
+
+__all__ = [
+    "AVAILABILITY_BASES",
+    "REQUIRED_METADATA",
+    "SnapshotValidation",
+    "metadata_path",
+    "validate_snapshot",
+]
 
 
 @dataclass(frozen=True)
