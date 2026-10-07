@@ -233,3 +233,38 @@ series:
 
 # China macro uses frozen official snapshots first.
 # Exact per-row available_date is preferred over fallback release lags.
+
+  # Tradable price levels, used as forward-return targets when testing an idea.
+  # These come from FRED rather than Yahoo so that research does not depend on
+  # yfinance, which rate-limits aggressively from shared IPs.
+  us_oil_wti:
+    provider: fred
+    symbol: DCOILWTICO
+    kind: market
+    frequency: daily
+    release_lag_days: 0
+    notes: "WTI crude spot price, USD/bbl. 1986 onwards."
+
+  us_copper_global:
+    provider: fred
+    symbol: PCOPPUSDM
+    kind: commodity
+    frequency: monthly
+    release_lag_days: 5
+    notes: "Global price of copper, USD/metric ton. 1992 onwards."
+
+  us_dollar_index_broad:
+    provider: fred
+    symbol: DTWEXBGS
+    kind: fx
+    frequency: daily
+    release_lag_days: 0
+    notes: "Nominal broad US dollar index. 2006 onwards."
+
+  eurusd:
+    provider: fred
+    symbol: DEXUSEU
+    kind: fx
+    frequency: daily
+    release_lag_days: 0
+    notes: "US dollars per euro, noon rate. 1999 onwards."

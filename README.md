@@ -132,3 +132,19 @@ See:
 - docs/valuation_contract.md
 - docs/flow_contract.md
 - docs/roadmap.md
+
+## Research loop
+
+Write one function, find out whether it predicts anything:
+
+```bash
+uv run macro-regime-quant test-idea examples/ideas/inflation_growth_spread.py \
+    --series us_core_cpi,us_payrolls \
+    --forward-assets us_oil_wti,us_copper_global \
+    --start 2000-01-01
+```
+
+The panel handed to your function is point-in-time, and forward returns start
+strictly after the signal, so a strong result cannot come from the test peeking
+at the future. See [docs/research_loop.md](docs/research_loop.md) for the full
+guide and the meaning of each column.
