@@ -67,6 +67,29 @@ def test_normalize_preserves_supplied_available_date():
     assert set(out["availability_basis"]) == {"unverified"}
 
 
+def test_normalize_labels_dated_but_unlabeled_rows_unverified():
+    """A date with no provenance is 'unverified', not 'unknown'."""
+
+    raw = pd.DataFrame(
+        {
+            "observation_date": ["2025-01-31"],
+            "available_date": ["2025-02-15"],
+            "value": [1.0],
+        }
+    )
+    out = normalize_observation_frame(raw, default_basis="unknown")
+    assert out.loc[0, "availability_basis"] == "unverified"
+    assert_frame_contract(out)
+
+
+def test_normalize_keeps_unknown_when_no_date_was_supplied():
+    raw = pd.DataFrame({"observation_date": ["2025-01-31"], "value": [1.0]})
+    out = normalize_observation_frame(raw, default_basis="unverified")
+    # No availability date at all: 'unknown' is the honest label even when the
+    # caller asked for a more permissive default.
+    assert out.loc[0, "availability_basis"] == "unknown"
+
+
 def test_normalize_does_not_relabel_explicit_basis():
     raw = pd.DataFrame(
         {
