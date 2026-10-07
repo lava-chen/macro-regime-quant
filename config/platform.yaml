@@ -1,0 +1,32 @@
+platform:
+  engines:
+    macro:
+      status: active
+      default_frequency: monthly
+    valuation:
+      status: foundation
+      default_frequency: event_driven
+    flow:
+      status: foundation
+      default_frequency: daily
+    risk:
+      status: planned
+      default_frequency: daily
+    portfolio:
+      status: planned
+      default_frequency: monthly
+
+  signal_components:
+    - valuation
+    - quality
+    - growth
+    - macro
+    - flow
+    - momentum
+    - risk
+
+  production_rules:
+    require_point_in_time_data: true
+    require_model_version: true
+    require_source_metadata: true
+    allow_direct_research_to_production: false

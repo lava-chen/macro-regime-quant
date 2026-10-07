@@ -1,0 +1,26 @@
+# Stable entity identifiers are canonical. Tickers are attributes, not primary keys.
+example_universe:
+  companies:
+    - company_id: US:AAPL
+      name: Apple Inc.
+      domicile: US
+      sector: Technology
+      business_type: general
+      securities:
+        - security_id: NASDAQ:AAPL
+          ticker: AAPL
+          exchange: NASDAQ
+          currency: USD
+          security_type: common_stock
+
+    - company_id: CN:TENCENT
+      name: Tencent Holdings
+      domicile: CN
+      sector: Communication Services
+      business_type: high_growth
+      securities:
+        - security_id: HKEX:0700
+          ticker: "0700"
+          exchange: HKEX
+          currency: HKD
+          security_type: common_stock
