@@ -37,15 +37,26 @@ pytest -q
 python -m macro_regime_quant build-us-baseline \
   --start 2000-01-01 \
   --output data/processed/us
+
+python -m macro_regime_quant analyze-us-regimes \
+  --start 2000-01-01 \
+  --output reports/us_regimes
 ```
 
-Outputs:
+Research outputs include:
 
 ```text
 data/processed/us/raw_monthly.csv
 data/processed/us/factors.csv
 data/processed/us/regimes.csv
+
+reports/us_regimes/state_history.csv
+reports/us_regimes/asset_prices.csv
+reports/us_regimes/forward_returns.csv
+reports/us_regimes/regime_return_summary.csv
 ```
+
+The regime research currently compares SPY, QQQ, TLT, GLD and DBC over 3M / 6M / 12M forward horizons.
 
 ## Important research limitation
 
