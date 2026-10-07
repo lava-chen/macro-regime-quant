@@ -1,37 +1,37 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+# Workspace root. Holds no source code — only the workspace declaration and the
+# tooling that runs across every member. Layering is strictly one-way:
+#
+#     core  <-  data  <-  engines  <-  research  <-  cli
+#
+# mrq-core imports nothing from the other packages, so the point-in-time
+# vocabulary cannot be changed by engine work.
 
 [project]
-name = "macro-regime-quant"
+name = "macro-regime-quant-workspace"
 version = "0.1.0"
-description = "Long-horizon China/US macro regime research and backtesting framework"
+description = "Point-in-time-safe macro and equity research workspace"
 requires-python = ">=3.11"
-dependencies = [
-  "numpy>=2.0",
-  "pandas>=2.2",
-  "pyyaml>=6.0",
-]
+dependencies = []
 
-[project.scripts]
-macro-regime-quant = "macro_regime_quant.cli:main"
+[tool.uv.workspace]
+members = ["packages/*"]
 
-[project.optional-dependencies]
-data = [
-  "yfinance>=0.2.50",
-  "requests>=2.32",
-]
-china = [
-  "akshare>=1.17",
-]
+[tool.uv.sources]
+mrq-core = { workspace = true }
+mrq-data = { workspace = true }
+mrq-engines = { workspace = true }
+mrq-research = { workspace = true }
+mrq-cli = { workspace = true }
+
+[dependency-groups]
 dev = [
   "pytest>=8.0",
   "ruff>=0.8",
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
 testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
+src = ["packages"]

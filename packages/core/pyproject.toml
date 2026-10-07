@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mrq-core"
+version = "0.1.0"
+description = "Point-in-time observation contracts, as-of primitives and entity identity for macro-regime-quant"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=2.0",
+  "pandas>=2.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mrq_core"]

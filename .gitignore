@@ -3,8 +3,12 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.pyc
+*.py[cod]
+*.egg-info/
 .env
 .DS_Store
+build/
+dist/
 
 data/raw/*
 !data/raw/.gitkeep

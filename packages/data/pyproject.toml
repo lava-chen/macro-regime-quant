@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mrq-data"
+version = "0.1.0"
+description = "Catalog, snapshots, availability policy and data providers for macro-regime-quant"
+requires-python = ">=3.11"
+dependencies = [
+  "mrq-core",
+  "numpy>=2.0",
+  "pandas>=2.2",
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+data = [
+  "yfinance>=0.2.50",
+  "requests>=2.32",
+]
+china = [
+  "akshare>=1.17",
+]
+
+[tool.uv.sources]
+mrq-core = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mrq_data"]

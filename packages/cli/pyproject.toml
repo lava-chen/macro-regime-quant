@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mrq-cli"
+version = "0.1.0"
+description = "Command-line interface for macro-regime-quant"
+requires-python = ">=3.11"
+dependencies = [
+  "mrq-core",
+  "mrq-data",
+  "mrq-engines",
+  "mrq-research",
+  "pyyaml>=6.0",
+]
+
+[project.scripts]
+macro-regime-quant = "mrq_cli.cli:main"
+
+[tool.uv.sources]
+mrq-core = { workspace = true }
+mrq-data = { workspace = true }
+mrq-engines = { workspace = true }
+mrq-research = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mrq_cli"]

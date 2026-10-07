@@ -12,6 +12,26 @@ The macro regime model remains the first production research engine, but the rep
 
 All engines share the same entity identities, point-in-time data discipline, backtest utilities, and model-versioning principles.
 
+## Repository layout
+
+The repository is a [uv](https://docs.astral.sh/uv/) workspace of five packages. Dependencies flow strictly one way:
+
+```
+mrq-core  <-  mrq-data  <-  mrq-engines  <-  mrq-research  <-  mrq-cli
+```
+
+| Package | Owns | May import |
+|---|---|---|
+| `mrq-core` | observation-frame contract, as-of primitives, entity identity, series types | numpy, pandas only |
+| `mrq-data` | catalog, snapshots, availability policy, providers | `mrq-core` |
+| `mrq-engines` | macro, valuation, flow, signals, cross-engine pipeline | `mrq-core`, `mrq-data` |
+| `mrq-research` | backtesting, forward returns, regime analysis | all below |
+| `mrq-cli` | command-line entry point | all below |
+
+`mrq-core` imports nothing from the other packages by design: the point-in-time vocabulary cannot be changed by engine work. `scripts/check_layering.py` enforces this in CI — Python does not, so without it the layering erodes the first time someone reaches for a convenient import.
+
+Tests live in `tests/<package>/` and can be run per package: `pytest tests/core`.
+
 ## Current status
 
 ### Macro v1
@@ -36,23 +56,24 @@ All engines share the same entity identities, point-in-time data discipline, bac
 ## Quick start
 
 ~~~bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev,data]"
-pytest -q
+uv sync --all-packages
+uv run pytest -q
+uv run ruff check packages tests scripts
+uv run python scripts/check_layering.py
+uv run macro-regime-quant --help
 
-python -m macro_regime_quant build-us-baseline \
+uv run macro-regime-quant build-us-baseline \
   --start 2000-01-01 \
   --output data/processed/us
 
-python -m macro_regime_quant analyze-us-regimes \
+uv run macro-regime-quant analyze-us-regimes \
   --start 2000-01-01 \
   --output reports/us_regimes
 
-python -m macro_regime_quant validate-snapshot \
+uv run macro-regime-quant validate-snapshot \
   data/raw/china/industrial_production_yoy.csv
 
-python -m macro_regime_quant build-china-baseline \
+uv run macro-regime-quant build-china-baseline \
   --start 2005-01-01 \
   --output data/processed/china
 ~~~
