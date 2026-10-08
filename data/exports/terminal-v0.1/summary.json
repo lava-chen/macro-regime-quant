@@ -2,10 +2,10 @@
   "schema_version": "1.0",
   "status": "success",
   "visibility": "public_market_and_macro_series_only",
-  "attempted_at": "2026-10-08T09:34:09Z",
-  "last_success_at": "2026-10-08T09:34:09Z",
-  "source_commit": "7261c8deec6b6af18d973c117f454c8c7bc7878f",
-  "workflow_run_id": "37757522640",
+  "attempted_at": "2026-10-08T09:36:31Z",
+  "last_success_at": "2026-10-08T09:36:31Z",
+  "source_commit": "c6298054ac1668a726bac65c928c6c5eb04ca414",
+  "workflow_run_id": "37757805680",
   "model_version": "macro-v1+9eb5a5ddc5",
   "factor_config_present": true,
   "series_count": 29,
@@ -13,9 +13,8 @@
   "sources": {
     "market_prices": {
       "state": "success",
-      "last_attempt_at": "2026-10-08T09:34:09Z",
-      "note": "This source was intentionally skipped for this run.",
-      "last_success_at": "2026-10-08T09:34:09Z",
+      "last_attempt_at": "2026-10-08T09:36:31Z",
+      "last_success_at": "2026-10-08T09:36:31Z",
       "error": null,
       "symbols": [
         "DBC",
@@ -29,8 +28,8 @@
     },
     "china_macro": {
       "state": "success",
-      "last_attempt_at": "2026-10-08T09:34:09Z",
-      "last_success_at": "2026-10-08T09:34:09Z",
+      "last_attempt_at": "2026-10-08T09:36:31Z",
+      "last_success_at": "2026-10-08T09:36:31Z",
       "error": null,
       "snapshot_series": 9,
       "latest_official_available_date": "2026-09-30",
@@ -54,9 +53,8 @@
     },
     "us_macro": {
       "state": "success",
-      "last_attempt_at": "2026-10-08T09:34:09Z",
-      "note": "This source was intentionally skipped for this run.",
-      "last_success_at": "2026-10-08T09:34:09Z",
+      "last_attempt_at": "2026-10-08T09:36:31Z",
+      "last_success_at": "2026-10-08T09:36:31Z",
       "error": null,
       "series_count": 12,
       "frequency": "monthly panel; FRED observations are latest revised values",
@@ -65,7 +63,7 @@
     },
     "china_snapshot_refresh": {
       "state": "not_run",
-      "last_attempt_at": "2026-10-08T09:34:09Z",
+      "last_attempt_at": "2026-10-08T09:36:31Z",
       "note": "Official releases are scanned monthly or by manual dispatch."
     }
   },
