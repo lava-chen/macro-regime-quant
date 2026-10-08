@@ -566,6 +566,10 @@ function renderDataPage() {
     card.append(top, el("h3", "", provider));
     const sourceLine = failed ? `${description}。已保留此前有效数据。` : description;
     card.append(el("p", "", sourceLine));
+    const lastSuccess = status.last_success_at
+      ? `最近成功更新：${fmtTimestamp(status.last_success_at)}`
+      : "尚无成功更新记录";
+    card.append(el("small", "status-update", lastSuccess));
     cards.append(card);
   });
   const allSeries = state.series;
@@ -619,6 +623,15 @@ function renderWarnings() {
   if (state.summary.china_harvest_state === "not_run") {
     const card = el("article", "warning-card");
     card.append(el("strong", "", "中国数据归档频率"), el("span", "", "国家统计局和中国人民银行官方数据每月扫描一次，也可手动触发；日常更新会沿用此前归档的官方快照。"));
+    container.append(card);
+  }
+  const missingInputs = [
+    ...(sources.china_macro?.missing_configured_inputs || []),
+    ...(sources.us_macro?.missing_configured_inputs || []),
+  ];
+  if (missingInputs.length) {
+    const card = el("article", "warning-card");
+    card.append(el("strong", "", "尚未接入的指标"), el("span", "", `当前配置但没有可用快照：${missingInputs.join("、")}`));
     container.append(card);
   }
 }

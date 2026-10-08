@@ -175,6 +175,7 @@ h2 { margin: 6px 0 0; color: #dfe6ea; font-size: 15px; font-weight: 500; letter-
 .status-state i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .status-card h3 { margin: 13px 0 4px; color: #d4dde2; font-size: 12px; font-weight: 500; }
 .status-card p { margin: 0; color: #71808a; font-size: 9px; line-height: 1.55; }
+.status-update { display: block; margin-top: 6px; color: #8b989f; font-size: 8px; line-height: 1.4; }
 .table-panel { overflow: hidden; }
 .table-panel .panel-head { padding-bottom: 15px; }
 .table-count { color: #697782; font: 8px var(--mono); letter-spacing: .08em; }
