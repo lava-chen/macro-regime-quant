@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#080d12" />
+    <meta
+      name="description"
+      content="宏观量化终端：个人使用的宏观与市场研究工作台。"
+    />
+    <title>宏观量化终端</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="terminal-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#markets" aria-label="宏观量化终端首页">
+          <span class="brand-mark">M<span>Q</span></span>
+          <span class="brand-copy">
+            <strong>宏观量化</strong>
+            <small>研究终端 <i>v0.1</i></small>
+          </span>
+        </a>
+        <div class="sidebar-rule"></div>
+        <p class="rail-label">工作台</p>
+        <nav class="nav-list" aria-label="终端模块">
+          <button class="nav-item active" data-page="markets" aria-current="page">
+            <span class="nav-glyph">◫</span><span>行情市场</span><kbd>01</kbd>
+          </button>
+          <button class="nav-item" data-page="macro">
+            <span class="nav-glyph">⌁</span><span>宏观因子</span><kbd>02</kbd>
+          </button>
+          <button class="nav-item" data-page="data">
+            <span class="nav-glyph">▤</span><span>数据状态</span><kbd>03</kbd>
+          </button>
+          <button class="nav-item" data-page="research">
+            <span class="nav-glyph">⌘</span><span>研究结果</span><kbd>04</kbd>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="privacy-card">
+            <span class="privacy-dot"></span>
+            <div><strong>私人研究工作台</strong><small>仅使用公开数据</small></div>
+          </div>
+          <div class="sidebar-foot"><span>MRQ / 0.1.0</span><span>亚洲 / 上海</span></div>
+        </div>
+      </aside>
+
+      <main class="main-shell">
+        <header class="topbar">
+          <div class="breadcrumb"><span>研究系统</span><b>/</b><strong id="breadcrumb-current">行情市场</strong></div>
+          <div class="topbar-right">
+            <div class="feed-indicator" id="feed-indicator"><span class="feed-light"></span><span id="feed-label">正在连接数据</span></div>
+            <button class="icon-button" id="refresh-button" title="刷新公开数据" aria-label="刷新数据">
+              <span>↻</span>
+            </button>
+            <div class="account-chip"><span class="account-avatar">R</span><span>私人</span></div>
+          </div>
+        </header>
+
+        <div class="mobile-nav" aria-label="终端模块">
+          <button class="mobile-nav-item active" data-page="markets">行情</button>
+          <button class="mobile-nav-item" data-page="macro">宏观</button>
+          <button class="mobile-nav-item" data-page="data">数据</button>
+          <button class="mobile-nav-item" data-page="research">研究</button>
+        </div>
+
+        <section class="page active" id="page-markets" data-page-view="markets">
+          <div class="page-heading heading-row">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> 跨资产行情</div>
+              <h1>行情市场 <span class="heading-period">/ 日线走势</span></h1>
+              <p class="page-deck">比较主要资产价格与成交量。相对表现以所选区间首个有效交易日归一化至 100。</p>
+            </div>
+            <div class="heading-stamp"><span>数据截至</span><strong id="market-asof">—</strong><small id="market-stale-state">等待数据源</small></div>
+          </div>
+
+          <div class="market-strip" id="market-strip"></div>
+
+          <section class="panel chart-panel">
+            <div class="panel-head chart-panel-head">
+              <div>
+                <div class="panel-kicker">价格走势 <span class="tiny-live">公开数据</span></div>
+                <h2 id="market-chart-title">区间相对表现（起点 = 100）</h2>
+              </div>
+              <div class="chart-head-controls">
+                <div class="segmented" id="market-mode" aria-label="价格显示方式">
+                  <button class="selected" data-mode="indexed">起点 = 100</button>
+                  <button data-mode="raw">原始价格</button>
+                </div>
+                <button class="quiet-button" id="market-restore">↺ <span>重置缩放</span></button>
+              </div>
+            </div>
+            <div class="series-controls" id="market-series-controls"></div>
+            <div class="chart-toolbar">
+              <div class="range-picker" id="market-ranges">
+                <button data-range="1M">1月</button><button data-range="3M">3月</button><button data-range="6M">6月</button>
+                <button class="selected" data-range="1Y">1年</button><button data-range="3Y">3年</button><button data-range="5Y">5年</button><button data-range="ALL">全部</button>
+              </div>
+              <label class="volume-select">成交量 <select id="volume-symbol"><option value="SPY">SPY</option></select></label>
+            </div>
+            <div class="chart-wrap" id="market-chart-wrap">
+              <div class="chart" id="market-chart" aria-label="可交互资产相对表现图"></div>
+              <div class="chart-empty hidden" id="market-chart-empty"><div class="empty-mark">⌁</div><strong>行情数据尚未同步</strong><span>雅虎财经历史行情尚未成功导出，图表不会填入模拟价格。</span></div>
+            </div>
+            <div class="chart-caption"><span><i class="caption-dot"></i> 每日收盘价 · 雅虎财经复权收盘价</span><span>成交量为普通成交股数，不含主动买卖方向</span></div>
+          </section>
+          <div class="under-chart-grid">
+            <section class="panel note-panel">
+              <div class="panel-kicker">图表说明</div>
+              <h3>价格与成交量</h3>
+              <p>价格使用复权收盘价。分时买卖方向、资金主动性及机构订单流不在当前数据契约内。</p>
+            </section>
+            <section class="panel coverage-panel">
+              <div class="panel-kicker">数据源状态</div>
+              <div class="coverage-line"><span>数据来源</span><strong id="market-provider-state">雅虎财经</strong></div>
+              <div class="coverage-line"><span>最近成功更新时间</span><strong id="market-last-success">—</strong></div>
+              <div class="coverage-line"><span>复权历史版本</span><strong class="warning-text">尚无版本归档</strong></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="page" id="page-macro" data-page-view="macro">
+          <div class="page-heading heading-row">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> 宏观因子与周期状态</div>
+              <h1>宏观因子 <span class="heading-period">/ 中国 · 美国</span></h1>
+              <p class="page-deck">查看已导出的官方序列、因子标准分与增长 × 通胀状态。缺失因子不会补零。</p>
+            </div>
+            <div class="country-switch" id="country-switch"><button class="selected" data-country="China">中国</button><button data-country="United States">美国</button></div>
+          </div>
+          <div class="macro-alert" id="macro-pit-alert"></div>
+          <section class="panel chart-panel">
+            <div class="panel-head chart-panel-head">
+              <div><div class="panel-kicker">因子历史走势</div><h2>因子水平 <span class="subtle">· 标准分仅用于对比显示尺度</span></h2></div>
+              <div class="segmented" id="macro-mode"><button class="selected" data-mode="zscore">标准分</button><button data-mode="raw">原始值</button></div>
+            </div>
+            <div class="series-controls" id="macro-series-controls"></div>
+            <div class="chart-toolbar"><div class="range-picker" id="macro-ranges"><button data-range="1Y">1年</button><button data-range="3Y">3年</button><button data-range="5Y">5年</button><button class="selected" data-range="ALL">全部</button></div><span class="chart-aside-label" id="macro-source-label">官方发布快照</span></div>
+            <div class="chart-wrap macro-chart-wrap"><div class="chart" id="macro-chart" aria-label="可交互宏观因子图"></div><div class="chart-empty hidden" id="macro-chart-empty"><div class="empty-mark">⌁</div><strong>当前视图没有可用序列</strong><span>请选择有覆盖数据的国家和指标。</span></div></div>
+          </section>
+          <div class="macro-lower-grid">
+            <section class="panel regime-panel">
+              <div class="panel-head"><div><div class="panel-kicker">宏观状态时间线</div><h2 id="regime-title">中国 · 增长 × 通胀</h2></div><span class="status-tag" id="regime-coverage">—</span></div>
+              <div class="regime-chart" id="regime-chart" aria-label="历史宏观状态时间线"></div>
+              <div class="regime-legend" id="regime-legend"></div>
+            </section>
+            <section class="panel distribution-panel">
+              <div class="panel-head"><div><div class="panel-kicker">状态分布</div><h2>已有观测样本</h2></div></div>
+              <div class="distribution-list" id="regime-distribution"></div>
+              <p class="micro-note">仅统计已导出的状态月度记录；样本短或来源缺失时不作推断。</p>
+            </section>
+          </div>
+        </section>
+
+        <section class="page" id="page-data" data-page-view="data">
+          <div class="page-heading heading-row">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> 数据来源与健康度</div><h1>数据状态 <span class="heading-period">/ 数据源清单</span></h1><p class="page-deck">查看覆盖范围、更新时间、缺失项与历史时点可用性（PIT）。</p></div>
+            <div class="heading-stamp"><span>数据格式</span><strong id="schema-version">v—</strong><small>公开序列数据契约</small></div>
+          </div>
+          <div class="status-cards" id="data-status-cards"></div>
+          <section class="panel table-panel">
+            <div class="panel-head"><div><div class="panel-kicker">已导出序列</div><h2>覆盖范围与来源</h2></div><span class="table-count" id="series-count">0 条序列</span></div>
+            <div class="table-scroll"><table><thead><tr><th>指标</th><th>国家 / 类型</th><th>覆盖区间</th><th>最新可得日期</th><th>数据来源</th><th>PIT 状态</th></tr></thead><tbody id="series-table-body"></tbody></table></div>
+          </section>
+          <section class="warning-grid" id="data-warnings"></section>
+        </section>
+
+        <section class="page" id="page-research" data-page-view="research">
+          <div class="page-heading">
+            <div class="eyebrow"><span class="eyebrow-line"></span> 研究结果准入检查</div>
+            <h1>研究结果 <span class="heading-period">/ 先验证，再展示</span></h1>
+            <p class="page-deck">只展示真实写出的研究结果。未验证的回测、IC 与收益统计不会以占位数值呈现。</p>
+          </div>
+          <section class="research-gate panel">
+            <div class="gate-symbol">!</div>
+            <div class="gate-copy"><div class="panel-kicker">暂无通过验证的回测结果</div><h2 id="research-state">研究结果尚未接入</h2><p id="research-message">当前报告目录没有已生成结果。终端不会用模拟收益代替实际回测。</p></div>
+            <div class="gate-badge"><span class="gate-dot"></span><strong>暂不展示结果</strong><small>数据检查通过后再开放</small></div>
+          </section>
+          <div class="research-grid">
+            <section class="panel research-card"><div class="panel-kicker">点时数据检查 <span class="tag-open">未完成</span></div><h3>ALFRED 历史版本接入</h3><p>当前主分支尚未包含 #17 草稿中的历史归档；归档也未接入按历史时点构建的因子面板。</p><a href="https://github.com/lava-chen/macro-regime-quant/pull/17" target="_blank" rel="noreferrer">查看第 17 号草稿 PR ↗</a></section>
+            <section class="panel research-card"><div class="panel-kicker">研究流程接入 <span class="tag-open">未完成</span></div><h3>历史时点验证</h3><p>还需完成防修订回归测试、未归档序列拒绝回退，以及端到端 PIT 回测。</p><a href="https://github.com/lava-chen/macro-regime-quant/issues/18" target="_blank" rel="noreferrer">查看第 18 号任务 ↗</a></section>
+            <section class="panel research-card"><div class="panel-kicker">行情数据 <span class="tag-limited">有限</span></div><h3>行情数据限制</h3><p>雅虎财经复权历史可用于界面观察，但尚未通过价格来源、交易成本与样本外检验。</p><span class="inline-status">不代表存在超额收益</span></section>
+          </div>
+          <section class="panel run-state-panel"><div class="panel-head"><div><div class="panel-kicker">研究引擎状态</div><h2>模块运行情况</h2></div></div><div class="engine-grid" id="engine-grid"></div></section>
+        </section>
+
+        <footer class="page-footer"><span>宏观量化终端 <b>·</b> 单人私人工作台</span><span id="footer-data-note">只读公开市场与宏观数据，不含持仓、交易记录或私人实验结果。</span></footer>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

@@ -1,0 +1,119 @@
+name: 终端公开数据更新
+
+on:
+  schedule:
+    # 上海时间周一至周五 07:30，即 UTC 时间周日至周四 23:30。
+    - cron: "30 23 * * 0-4"
+    # 每月更新一次发布较慢的中国官方数据归档。
+    - cron: "15 1 16 * *"
+  workflow_dispatch:
+    inputs:
+      refresh_china:
+        description: 重新扫描国家统计局和中国人民银行的官方发布数据
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches:
+      - feat/macro-quant-terminal-v01
+    paths:
+      - "config/**"
+      - "packages/**"
+      - "scripts/export_terminal_data.py"
+      - "tests/cli/test_terminal_export.py"
+      - ".github/workflows/terminal-data.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: terminal-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 检出本次更新使用的代码版本
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          path: source
+
+      - name: 检出终端公开数据分支
+        uses: actions/checkout@v4
+        with:
+          ref: macro-quant-terminal-data
+          path: terminal-data
+          persist-credentials: true
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: source/.python-version
+
+      - name: 配置 uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: source/uv.lock
+
+      - name: 安装工作区和终端数据依赖
+        working-directory: source
+        run: |
+          uv sync --locked --all-packages --group dev
+          uv sync --locked --package mrq-data --extra data --inexact
+
+      - name: 恢复上次有效公开数据与中国快照
+        run: |
+          mkdir -p source/data/raw/china source/data/exports/terminal-v0.1
+          if [ -d terminal-data/data/raw/china ]; then
+            cp -a terminal-data/data/raw/china/. source/data/raw/china/
+          fi
+          if [ -d terminal-data/data/exports/terminal-v0.1 ]; then
+            cp -a terminal-data/data/exports/terminal-v0.1/. source/data/exports/terminal-v0.1/
+          fi
+
+      - name: 更新中国官方快照
+        id: china_harvest
+        if: >-
+          (github.event_name == 'workflow_dispatch' && inputs.refresh_china) ||
+          (github.event_name == 'schedule' && github.event.schedule == '15 1 16 * *')
+        continue-on-error: true
+        working-directory: source
+        run: uv run --locked macro-regime-quant collect-china-snapshots --start-year 2009 --output data/raw/china
+
+      - name: 导出行情与宏观数据
+        id: data_export
+        working-directory: source
+        env:
+          CHINA_HARVEST_OUTCOME: ${{ steps.china_harvest.outcome }}
+        run: |
+          case "$CHINA_HARVEST_OUTCOME" in
+            success) harvest_state=success ;;
+            failure) harvest_state=failed ;;
+            *) harvest_state=not_run ;;
+          esac
+          uv run --locked python scripts/export_terminal_data.py \
+            --output data/exports/terminal-v0.1 \
+            --china-harvest-state "$harvest_state"
+
+      - name: 发布数据与运行状态并保留上次有效文件
+        if: always()
+        run: |
+          mkdir -p terminal-data/data/raw/china terminal-data/data/exports/terminal-v0.1
+          cp -a source/data/raw/china/. terminal-data/data/raw/china/
+          if [ -d source/data/exports/terminal-v0.1 ]; then
+            cp -a source/data/exports/terminal-v0.1/. terminal-data/data/exports/terminal-v0.1/
+          fi
+          cd terminal-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/raw/china data/exports/terminal-v0.1
+          if git diff --cached --quiet; then
+            echo "没有需要发布的公开数据变更。"
+          else
+            git commit -m "data: 更新终端公开数据序列"
+            git push origin HEAD:macro-quant-terminal-data
+          fi

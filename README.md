@@ -157,3 +157,10 @@ The panel handed to your function is point-in-time, and forward returns start
 strictly after the signal, so a strong result cannot come from the test peeking
 at the future. See [docs/research_loop.md](docs/research_loop.md) for the full
 guide and the meaning of each column.
+
+## 私人研究终端
+
+`web/terminal/` 界面读取 `scripts/export_terminal_data.py` 生成的公开 JSON 数据。
+私人 Sites 站点展示市场与宏观历史；公开数据源中不包含私人实验、持仓或回测指标。
+数据契约、更新频率和 PIT 限制见
+[`docs/terminal-data-export.md`](docs/terminal-data-export.md)。

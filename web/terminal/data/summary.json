@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0",
+  "status": "partial",
+  "visibility": "public_market_and_macro_series_only",
+  "attempted_at": "2026-10-08T09:16:16Z",
+  "last_success_at": "2026-10-08T09:16:16Z",
+  "source_commit": "ea0132ad8109975c63f4fd600ceb6a651f4eb007",
+  "workflow_run_id": null,
+  "model_version": "macro-v1+9eb5a5ddc5",
+  "factor_config_present": true,
+  "series_count": 12,
+  "regime_country_count": 1,
+  "sources": {
+    "market_prices": {
+      "state": "not_run",
+      "last_attempt_at": "2026-10-08T09:16:16Z",
+      "note": "本次运行按设置跳过了此数据源。"
+    },
+    "china_macro": {
+      "state": "success",
+      "last_attempt_at": "2026-10-08T09:16:16Z",
+      "last_success_at": "2026-10-08T09:16:16Z",
+      "error": null,
+      "snapshot_series": 9,
+      "latest_official_available_date": "2026-09-30",
+      "missing_configured_inputs": [
+        "中国 10 年期收益率",
+        "中国核心居民消费价格指数"
+      ],
+      "availability_policy": "official_release_only",
+      "snapshot_note": "Nine frozen official series; the current archive is partial and uneven.",
+      "raw_panel_columns": [
+        "cn_cpi",
+        "cn_fixed_asset_investment",
+        "cn_industrial_production",
+        "cn_m1",
+        "cn_m2",
+        "cn_pmi_new_orders",
+        "cn_ppi",
+        "cn_retail_sales",
+        "cn_tsf_stock_yoy"
+      ]
+    },
+    "us_macro": {
+      "state": "not_run",
+      "last_attempt_at": "2026-10-08T09:16:16Z",
+      "note": "本次运行按设置跳过了此数据源。"
+    },
+    "china_snapshot_refresh": {
+      "state": "not_run",
+      "last_attempt_at": "2026-10-08T09:16:16Z",
+      "note": "官方发布数据按月扫描，也可手动触发更新。"
+    }
+  },
+  "china_snapshot_coverage": {
+    "macro:cn_cpi": {
+      "observations": 59,
+      "from": "2021-10-31",
+      "through": "2026-08-31",
+      "latest_available_date": "2026-09-09"
+    },
+    "macro:cn_ppi": {
+      "observations": 59,
+      "from": "2021-10-31",
+      "through": "2026-08-31",
+      "latest_available_date": "2026-09-09"
+    },
+    "macro:cn_industrial_production": {
+      "observations": 55,
+      "from": "2021-09-30",
+      "through": "2026-08-31",
+      "latest_available_date": "2026-09-15"
+    },
+    "macro:cn_retail_sales": {
+      "observations": 54,
+      "from": "2021-10-31",
+      "through": "2026-08-31",
+      "latest_available_date": "2026-09-15"
+    },
+    "macro:cn_fixed_asset_investment": {
+      "observations": 55,
+      "from": "2021-09-30",
+      "through": "2026-08-31",
+      "latest_available_date": "2026-09-15"
+    },
+    "macro:cn_pmi_new_orders": {
+      "observations": 60,
+      "from": "2021-10-31",
+      "through": "2026-09-30",
+      "latest_available_date": "2026-09-30"
+    },
+    "macro:cn_m1": {
+      "observations": 201,
+      "from": "2009-11-30",
+      "through": "2026-08-31",
+      "latest_available_date": "2026-09-14"
+    },
+    "macro:cn_m2": {
+      "observations": 201,
+      "from": "2009-11-30",
+      "through": "2026-08-31",
+      "latest_available_date": "2026-09-14"
+    },
+    "macro:cn_tsf_stock_yoy": {
+      "observations": 119,
+      "from": "2014-12-31",
+      "through": "2025-08-31",
+      "latest_available_date": "2025-09-12"
+    }
+  },
+  "china_harvest_state": "not_run",
+  "errors": [],
+  "pit_gate": {
+    "china": "中国官方发布快照已冻结，但数据不完整，历史覆盖也不均匀。",
+    "united_states": "美国宏观历史使用 FRED 当前修订值，发布日期滞后为近似估算，不具备历史时点安全性。",
+    "alfred": "第 17 号草稿 PR 中的 ALFRED 归档尚未接入历史研究流程。",
+    "backtests": "当前没有导出通过历史时点验证的回测结果。"
+  }
+}
