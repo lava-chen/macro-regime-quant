@@ -12,6 +12,12 @@ dist/
 
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/china/
+data/raw/china/*
+!data/raw/china/README.md
+!data/raw/china/*.csv
+!data/raw/china/*.meta.yaml
+!data/raw/china/china_harvest_audit.yaml
 data/processed/*
 !data/processed/.gitkeep
 reports/*

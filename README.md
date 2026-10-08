@@ -41,7 +41,8 @@ Tests live in `tests/<package>/` and can be run per package: `pytest tests/core`
 - China / US factor definitions;
 - Growth x Inflation four-regime baseline;
 - runnable US FRED pipeline;
-- China official snapshot contract with row-level release-date evidence;
+- China official snapshot contract and NBS / PBOC collectors with row-level value and release-date evidence;
+- collected NBS snapshots from 2021-09/10 onward, PBOC M1/M2 from 2009-11, and TSF stock from 2014-12 through 2025-08; coverage is partial and gaps remain;
 - regime-conditioned 3M / 6M / 12M cross-asset research.
 
 ### Platform v0
@@ -73,12 +74,20 @@ uv run macro-regime-quant analyze-us-regimes \
 uv run macro-regime-quant validate-snapshot \
   data/raw/china/industrial_production_yoy.csv
 
+uv run macro-regime-quant collect-china-snapshots \
+  --start-year 2005 \
+  --end-year 2026 \
+  --output data/raw/china
+
 uv run macro-regime-quant build-china-baseline \
   --start 2005-01-01 \
+  --allow-partial-sources \
   --output data/processed/china
 ~~~
 
-The China baseline admits only availability_basis=official_release rows by default. Broader availability policies must be selected explicitly and reported with any results.
+The China baseline admits only availability_basis=official_release rows by default. Broader availability policies must be selected explicitly and reported with any results. `--allow-partial-sources` is required while configured series are missing; factor component minimums remain in force, so under-sourced factors stay missing.
+
+Current coverage and model output are documented in [the China/US audit](docs/research/china_official_snapshot_quality_2026-10.md). Reproduce snapshot validation, period-gap profiling, and the partial China factor/regime run in [the executed audit notebook](notebooks/china_snapshot_quality.ipynb).
 
 ## Research principles
 

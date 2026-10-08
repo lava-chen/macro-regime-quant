@@ -216,6 +216,29 @@ def test_contract_rejects_available_before_observation():
     assert any("earlier than observation_date" in e for e in report.errors)
 
 
+def test_contract_uses_period_start_for_monthly_release_date():
+    frame = _dated_frame(
+        available_date=["2025-01-27"],
+        availability_basis=["official_release"],
+        availability_evidence_url=["https://stats.gov.cn/release/pmi"],
+    )
+    frame["observation_period"] = ["2025-01"]
+    report = check_frame_contract(frame)
+    assert report.ok
+
+
+def test_contract_rejects_release_before_observation_period_start():
+    frame = _dated_frame(
+        available_date=["2024-12-31"],
+        availability_basis=["official_release"],
+        availability_evidence_url=["https://stats.gov.cn/release/pmi"],
+    )
+    frame["observation_period"] = ["2025-01"]
+    report = check_frame_contract(frame)
+    assert not report.ok
+    assert any("observation period start" in e for e in report.errors)
+
+
 def test_contract_rejects_duplicate_observation_dates():
     out = normalize_observation_frame(
         pd.DataFrame({"observation_date": ["2025-01-31", "2025-01-31"], "value": [1.0, 2.0]})

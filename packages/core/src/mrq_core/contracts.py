@@ -24,7 +24,13 @@ REQUIRED_COLUMNS: frozenset[str] = frozenset({"observation_date", "value", "avai
 
 #: Columns a normalized frame may carry.
 OPTIONAL_COLUMNS: frozenset[str] = frozenset(
-    {"available_date", "availability_evidence_url", "availability_lag_days"}
+    {
+        "available_date",
+        "availability_evidence_url",
+        "availability_lag_days",
+        "observation_period",
+        "source_value_url",
+    }
 )
 
 
@@ -104,8 +110,29 @@ def check_frame_contract(frame: pd.DataFrame, *, require_available_date: bool = 
                 errors.append("rows with a basis other than 'unknown' require an available_date")
             if (basis.eq("unknown") & available.notna()).any():
                 errors.append("rows with basis 'unknown' must not carry an available_date")
-            if (available.notna() & (available < observation)).any():
-                errors.append("available_date cannot be earlier than observation_date")
+            earliest_valid_date = observation.copy()
+            if "observation_period" in frame.columns:
+                period_prefix = (
+                    frame["observation_period"]
+                    .astype("string")
+                    .str.extract(r"^(\d{4}-\d{2})", expand=False)
+                )
+                period_start = pd.to_datetime(period_prefix + "-01", errors="coerce")
+                earliest_valid_date = period_start.fillna(observation)
+            if (available.notna() & (available < earliest_valid_date)).any():
+                message = (
+                    "available_date cannot be earlier than the observation period start"
+                    if "observation_period" in frame.columns
+                    else "available_date cannot be earlier than observation_date"
+                )
+                errors.append(message)
+
+            if "source_value_url" in frame.columns:
+                value_sources = frame["source_value_url"].astype("string").str.strip()
+                if value_sources.isna().any() or value_sources.eq("").any():
+                    errors.append("source_value_url must be populated when the column is present")
+                elif not value_sources.str.startswith(("https://", "http://")).all():
+                    errors.append("source_value_url must be an http(s) URL")
             if "availability_evidence_url" in frame.columns:
                 evidence = frame["availability_evidence_url"].astype("string").str.strip()
                 needs_evidence = basis.isin(EVIDENCED_BASES)
