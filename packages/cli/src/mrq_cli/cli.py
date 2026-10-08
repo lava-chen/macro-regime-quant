@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 import yaml
+from mrq_data.catalog import CatalogError, load_catalog
 from mrq_data.snapshots import validate_snapshot
 from mrq_engines.pipeline import (
     build_china_baseline,
@@ -134,6 +135,59 @@ def _write_baseline(
     print(f"Wrote baseline to {out}")
 
 
+def _run_snapshot_vintages(args) -> None:
+    """Grow the vintage archive so historical backtests stop reading the future."""
+
+    from mrq_data.vintages import coverage, snapshot_series
+
+    try:
+        catalog = load_catalog(args.catalog)
+    except CatalogError as exc:
+        raise SystemExit(f"error: {exc}") from exc
+
+    keys = [s.strip() for s in args.series.split(",") if s.strip()]
+    missing = [k for k in keys if k not in catalog]
+    if missing:
+        raise SystemExit(
+            f"error: unknown series {missing}. Known keys include {sorted(catalog)[:6]}"
+        )
+
+    root = Path(args.root)
+    print(
+        f"Snapshotting {len(keys)} series every {args.step_months} month(s) "
+        f"from {args.start} to {args.end or 'today'}"
+    )
+
+    for key in keys:
+        spec = catalog[key]
+        if spec.provider != "alfred":
+            # A symbol that is never revised gains nothing from an archive, and
+            # fetching it anyway would cost minutes for an identical result.
+            print(f"  {key}: skipped (provider={spec.provider}) — point it at 'alfred' first")
+            continue
+        print(f"  {key} ({spec.symbol})")
+        result = snapshot_series(
+            spec,
+            start=args.start,
+            end=args.end,
+            step_months=args.step_months,
+            root=root,
+            progress=True,
+        )
+        cov = coverage(spec.symbol, root=root)
+        print(
+            f"    captured={result['captured']} skipped={result['skipped']}"
+            f" | archive {cov.earliest.date() if cov.earliest else '-'} .."
+            f" {cov.latest.date() if cov.latest else '-'}"
+            f" ({len(cov.vintages)} vintages)"
+        )
+
+    print(
+        "\nAn archive is only as honest as its oldest snapshot: a backtest earlier "
+        "than the archive start has no point-in-time data and must not be run."
+    )
+
+
 def _run_test_idea(args) -> None:
     """Evaluate a user-supplied signal file and print its diagnostics."""
 
@@ -203,8 +257,9 @@ def _run_test_idea(args) -> None:
         print(f"\n! {w}")
 
 
-def main() -> None:
-    args = build_parser().parse_args()
+def main(argv: list[str] | None = None) -> None:
+    """Entry point. ``argv`` defaults to sys.argv; passing it makes the CLI testable."""
+    args = build_parser().parse_args(argv)
 
     if args.command == "build-us-baseline":
         _write_baseline(
@@ -251,6 +306,10 @@ def main() -> None:
             f"available_date={result.has_available_date}",
             f"availability_basis={result.availability_basis_counts}",
         )
+        return
+
+    if args.command == "snapshot-vintages":
+        _run_snapshot_vintages(args)
         return
 
     if args.command == "test-idea":
