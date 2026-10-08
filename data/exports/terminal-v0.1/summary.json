@@ -2,10 +2,10 @@
   "schema_version": "1.0",
   "status": "success",
   "visibility": "public_market_and_macro_series_only",
-  "attempted_at": "2026-10-08T10:04:21Z",
-  "last_success_at": "2026-10-08T10:04:21Z",
-  "source_commit": "60db443bb3ac5c3c56262daa962c6d8ad20fb23e",
-  "workflow_run_id": "37761003844",
+  "attempted_at": "2026-10-08T10:08:22Z",
+  "last_success_at": "2026-10-08T10:08:22Z",
+  "source_commit": "05a26b56c6fcc87bb132f1a50c105f8c41b00b01",
+  "workflow_run_id": "37761456331",
   "model_version": "macro-v1+9eb5a5ddc5",
   "factor_config_present": true,
   "series_count": 29,
@@ -13,8 +13,8 @@
   "sources": {
     "market_prices": {
       "state": "success",
-      "last_attempt_at": "2026-10-08T10:04:21Z",
-      "last_success_at": "2026-10-08T10:04:21Z",
+      "last_attempt_at": "2026-10-08T10:08:22Z",
+      "last_success_at": "2026-10-08T10:08:22Z",
       "error": null,
       "symbols": [
         "DBC",
@@ -28,8 +28,8 @@
     },
     "china_macro": {
       "state": "success",
-      "last_attempt_at": "2026-10-08T10:04:21Z",
-      "last_success_at": "2026-10-08T10:04:21Z",
+      "last_attempt_at": "2026-10-08T10:08:22Z",
+      "last_success_at": "2026-10-08T10:08:22Z",
       "error": null,
       "snapshot_series": 9,
       "latest_official_available_date": "2026-09-30",
@@ -53,8 +53,8 @@
     },
     "us_macro": {
       "state": "success",
-      "last_attempt_at": "2026-10-08T10:04:21Z",
-      "last_success_at": "2026-10-08T10:04:21Z",
+      "last_attempt_at": "2026-10-08T10:08:22Z",
+      "last_success_at": "2026-10-08T10:08:22Z",
       "error": null,
       "series_count": 12,
       "frequency": "月度面板；FRED 观测为当前修订值",
@@ -63,7 +63,7 @@
     },
     "china_snapshot_refresh": {
       "state": "not_run",
-      "last_attempt_at": "2026-10-08T10:04:21Z",
+      "last_attempt_at": "2026-10-08T10:08:22Z",
       "note": "官方发布数据按月扫描，也可手动触发更新。"
     }
   },

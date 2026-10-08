@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-10-08T10:04:21Z",
+  "generated_at": "2026-10-08T10:08:22Z",
   "countries": [
     {
       "country": "China",
-      "updated_at": "2026-10-08T10:04:21Z",
+      "updated_at": "2026-10-08T10:08:22Z",
       "pit_status": "official_release_as_of_panel_partial_coverage",
       "definition": "增长 × 通胀四象限",
       "history": [
@@ -127,7 +127,7 @@
     },
     {
       "country": "United States",
-      "updated_at": "2026-10-08T10:04:21Z",
+      "updated_at": "2026-10-08T10:08:22Z",
       "pit_status": "latest_revised_values_not_pit_safe",
       "definition": "增长 × 通胀四象限",
       "history": [
