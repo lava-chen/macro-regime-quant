@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-10-08T09:42:35Z",
-  "source_commit": "28a7f7414c3f15d206ca0c4fcac5750bd184169e",
+  "generated_at": "2026-10-08T10:04:21Z",
+  "source_commit": "60db443bb3ac5c3c56262daa962c6d8ad20fb23e",
   "model_version": "macro-v1+9eb5a5ddc5",
   "series": [
     {
@@ -12,17 +12,17 @@
       "kind": "asset_price",
       "unit": "USD",
       "frequency": "daily",
-      "source": "Yahoo Finance via yfinance",
+      "source": "雅虎财经（yfinance）",
       "source_url": "https://finance.yahoo.com/quote/SPY/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
         "through": "2026-10-07",
         "latest_available_date": "2026-10-07"
       },
-      "notes": "Adjusted close includes later corporate-action adjustments. Volume is ordinary reported share volume; no buyer/seller direction is available.",
+      "notes": "复权收盘价包含后续公司行动调整。成交量为普通报告股数，不含主动买入或卖出方向。",
       "points": [
         {
           "date": "2026-09-23",
@@ -111,17 +111,17 @@
       "kind": "asset_price",
       "unit": "USD",
       "frequency": "daily",
-      "source": "Yahoo Finance via yfinance",
+      "source": "雅虎财经（yfinance）",
       "source_url": "https://finance.yahoo.com/quote/QQQ/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
         "through": "2026-10-07",
         "latest_available_date": "2026-10-07"
       },
-      "notes": "Adjusted close includes later corporate-action adjustments. Volume is ordinary reported share volume; no buyer/seller direction is available.",
+      "notes": "复权收盘价包含后续公司行动调整。成交量为普通报告股数，不含主动买入或卖出方向。",
       "points": [
         {
           "date": "2026-09-23",
@@ -210,17 +210,17 @@
       "kind": "asset_price",
       "unit": "USD",
       "frequency": "daily",
-      "source": "Yahoo Finance via yfinance",
+      "source": "雅虎财经（yfinance）",
       "source_url": "https://finance.yahoo.com/quote/GLD/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
         "through": "2026-10-07",
         "latest_available_date": "2026-10-07"
       },
-      "notes": "Adjusted close includes later corporate-action adjustments. Volume is ordinary reported share volume; no buyer/seller direction is available.",
+      "notes": "复权收盘价包含后续公司行动调整。成交量为普通报告股数，不含主动买入或卖出方向。",
       "points": [
         {
           "date": "2026-09-23",
@@ -309,17 +309,17 @@
       "kind": "asset_price",
       "unit": "USD",
       "frequency": "daily",
-      "source": "Yahoo Finance via yfinance",
+      "source": "雅虎财经（yfinance）",
       "source_url": "https://finance.yahoo.com/quote/TLT/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
         "through": "2026-10-07",
         "latest_available_date": "2026-10-07"
       },
-      "notes": "Adjusted close includes later corporate-action adjustments. Volume is ordinary reported share volume; no buyer/seller direction is available.",
+      "notes": "复权收盘价包含后续公司行动调整。成交量为普通报告股数，不含主动买入或卖出方向。",
       "points": [
         {
           "date": "2026-09-23",
@@ -408,17 +408,17 @@
       "kind": "asset_price",
       "unit": "USD",
       "frequency": "daily",
-      "source": "Yahoo Finance via yfinance",
+      "source": "雅虎财经（yfinance）",
       "source_url": "https://finance.yahoo.com/quote/DBC/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
         "through": "2026-10-07",
         "latest_available_date": "2026-10-07"
       },
-      "notes": "Adjusted close includes later corporate-action adjustments. Volume is ordinary reported share volume; no buyer/seller direction is available.",
+      "notes": "复权收盘价包含后续公司行动调整。成交量为普通报告股数，不含主动买入或卖出方向。",
       "points": [
         {
           "date": "2026-09-23",
@@ -501,13 +501,13 @@
     },
     {
       "id": "macro:cn_cpi",
-      "label": "China CPI YoY",
+      "label": "居民消费价格指数同比",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "percent_yoy",
       "frequency": "monthly",
-      "source": "National Bureau of Statistics of China",
+      "source": "中国国家统计局",
       "source_url": "https://www.stats.gov.cn/sj/zxfb/",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T17:11:40+08:00",
@@ -517,7 +517,7 @@
         "through": "2026-08-31",
         "latest_available_date": "2026-09-09"
       },
-      "notes": "Values are stored as reported in the linked NBS release and are not transformed again. The indexed release archive currently begins around 2021-09; earlier releases may exist at direct URLs and have not been systematically discovered. Observation coverage: 2021-10-31 through 2026-08-31.",
+      "notes": "数值按每期国家统计局原始发布记录保存，未进行二次转换。索引归档目前从约 2021 年 9 月开始；更早发布尚未系统检索。 观测区间为 2021-10-31 至 2026-08-31。",
       "points": [
         {
           "date": "2021-10-31",
@@ -995,13 +995,13 @@
     },
     {
       "id": "macro:cn_ppi",
-      "label": "China PPI YoY",
+      "label": "工业生产者出厂价格指数同比",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "percent_yoy",
       "frequency": "monthly",
-      "source": "National Bureau of Statistics of China",
+      "source": "中国国家统计局",
       "source_url": "https://www.stats.gov.cn/sj/zxfb/",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T17:11:40+08:00",
@@ -1011,7 +1011,7 @@
         "through": "2026-08-31",
         "latest_available_date": "2026-09-09"
       },
-      "notes": "Values are stored as reported in the linked NBS release and are not transformed again. The indexed release archive currently begins around 2021-09; earlier releases may exist at direct URLs and have not been systematically discovered. Observation coverage: 2021-10-31 through 2026-08-31.",
+      "notes": "数值按每期国家统计局原始发布记录保存，未进行二次转换。索引归档目前从约 2021 年 9 月开始；更早发布尚未系统检索。 观测区间为 2021-10-31 至 2026-08-31。",
       "points": [
         {
           "date": "2021-10-31",
@@ -1489,13 +1489,13 @@
     },
     {
       "id": "macro:cn_industrial_production",
-      "label": "China Industrial Production YoY",
+      "label": "规模以上工业增加值同比",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "percent_yoy",
       "frequency": "monthly",
-      "source": "National Bureau of Statistics of China",
+      "source": "中国国家统计局",
       "source_url": "https://www.stats.gov.cn/sj/zxfb/",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T17:11:40+08:00",
@@ -1505,7 +1505,7 @@
         "through": "2026-08-31",
         "latest_available_date": "2026-09-15"
       },
-      "notes": "Values are stored as reported in the linked NBS release and are not transformed again. The indexed release archive currently begins around 2021-09; earlier releases may exist at direct URLs and have not been systematically discovered.  Observation coverage: 2021-09-30 through 2026-08-31. The combined January-February release is assigned to February.",
+      "notes": "数值按每期国家统计局原始发布记录保存，未进行二次转换。1 至 2 月合并发布的数据归入 2 月。索引归档目前从约 2021 年 9 月开始。 观测区间为 2021-09-30 至 2026-08-31。",
       "points": [
         {
           "date": "2021-09-30",
@@ -1951,13 +1951,13 @@
     },
     {
       "id": "macro:cn_retail_sales",
-      "label": "China Retail Sales YoY",
+      "label": "社会消费品零售总额同比",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "percent_yoy",
       "frequency": "monthly",
-      "source": "National Bureau of Statistics of China",
+      "source": "中国国家统计局",
       "source_url": "https://www.stats.gov.cn/sj/zxfb/",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T17:11:40+08:00",
@@ -1967,7 +1967,7 @@
         "through": "2026-08-31",
         "latest_available_date": "2026-09-15"
       },
-      "notes": "Values are stored as reported in the linked NBS release and are not transformed again. The indexed release archive currently begins around 2021-09; earlier releases may exist at direct URLs and have not been systematically discovered. Observation coverage: 2021-10-31 through 2026-08-31. The combined January-February release is assigned to February. December uses an explicit December YoY; the annual headline rate is not substituted.",
+      "notes": "数值按每期国家统计局原始发布记录保存，未进行二次转换。1 至 2 月合并发布的数据归入 2 月；12 月使用当月同比，不以全年总增速替代。 观测区间为 2021-10-31 至 2026-08-31。",
       "points": [
         {
           "date": "2021-10-31",
@@ -2405,13 +2405,13 @@
     },
     {
       "id": "macro:cn_fixed_asset_investment",
-      "label": "China Fixed Asset Investment YTD YoY",
+      "label": "固定资产投资累计同比",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "percent_yoy",
       "frequency": "monthly",
-      "source": "National Bureau of Statistics of China",
+      "source": "中国国家统计局",
       "source_url": "https://www.stats.gov.cn/sj/zxfb/",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T17:11:40+08:00",
@@ -2421,7 +2421,7 @@
         "through": "2026-08-31",
         "latest_available_date": "2026-09-15"
       },
-      "notes": "Values are stored as reported in the linked NBS release and are not transformed again. The indexed release archive currently begins around 2021-09; earlier releases may exist at direct URLs and have not been systematically discovered. This is cumulative year-to-date YoY, not monthly growth. Observation coverage: 2021-09-30 through 2026-08-31. The combined January-February release is assigned to February. December records use the official full-year cumulative year-to-date YoY rate.",
+      "notes": "数值按每期国家统计局原始发布记录保存。这是年初至今累计同比，不是单月增速；1 至 2 月合并发布的数据归入 2 月。 观测区间为 2021-09-30 至 2026-08-31。",
       "points": [
         {
           "date": "2021-09-30",
@@ -2867,13 +2867,13 @@
     },
     {
       "id": "macro:cn_pmi_new_orders",
-      "label": "China PMI New Orders",
+      "label": "制造业采购经理指数新订单",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "index_points",
       "frequency": "monthly",
-      "source": "National Bureau of Statistics of China",
+      "source": "中国国家统计局",
       "source_url": "https://www.stats.gov.cn/sj/zxfb/",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T17:11:40+08:00",
@@ -2883,7 +2883,7 @@
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Values are stored as reported in the linked NBS release and are not transformed again. The indexed release archive currently begins around 2021-09; earlier releases may exist at direct URLs and have not been systematically discovered. Observation coverage: 2021-10-31 through 2026-09-30.",
+      "notes": "数值按每期国家统计局原始发布记录保存，未进行二次转换。索引归档目前从约 2021 年 9 月开始；更早发布尚未系统检索。 观测区间为 2021-10-31 至 2026-09-30。",
       "points": [
         {
           "date": "2021-10-31",
@@ -3369,13 +3369,13 @@
     },
     {
       "id": "macro:cn_m1",
-      "label": "China M1 YoY",
+      "label": "M1 货币供应量同比",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "percent_yoy",
       "frequency": "monthly",
-      "source": "People's Bank of China",
+      "source": "中国人民银行",
       "source_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/index.html",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T16:41:31+08:00",
@@ -3385,7 +3385,7 @@
         "through": "2026-08-31",
         "latest_available_date": "2026-09-14"
       },
-      "notes": "Values and publication dates are from the linked original PBOC report. The indexed archive begins around 2009; earlier reports are not filled. M1 definition changes are retained as originally reported; historical breaks are not backfilled. Observation coverage: 2009-11-30 through 2026-08-31. The 2011-05 value is extracted from an official PBOC PDF attachment; the HTML release page is the publication-date evidence.",
+      "notes": "数值和发布日期来自人民银行原始报告。索引归档约从 2009 年开始；M1 定义变化按原始发布保留，未对历史断点回填。2011 年 5 月数值取自人民银行 PDF 附件，网页用于证明发布日期。 观测区间为 2009-11-30 至 2026-08-31。",
       "points": [
         {
           "date": "2009-11-30",
@@ -4999,13 +4999,13 @@
     },
     {
       "id": "macro:cn_m2",
-      "label": "China M2 YoY",
+      "label": "M2 货币供应量同比",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "percent_yoy",
       "frequency": "monthly",
-      "source": "People's Bank of China",
+      "source": "中国人民银行",
       "source_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/index.html",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T16:41:31+08:00",
@@ -5015,7 +5015,7 @@
         "through": "2026-08-31",
         "latest_available_date": "2026-09-14"
       },
-      "notes": "Values and publication dates are from the linked original PBOC report. The indexed archive begins around 2009; earlier reports are not filled. Observation coverage: 2009-11-30 through 2026-08-31. The 2011-05 value is extracted from an official PBOC PDF attachment; the HTML release page is the publication-date evidence.",
+      "notes": "数值和发布日期来自人民银行原始报告。索引归档约从 2009 年开始；2011 年 5 月数值取自人民银行 PDF 附件，网页用于证明发布日期。 观测区间为 2009-11-30 至 2026-08-31。",
       "points": [
         {
           "date": "2009-11-30",
@@ -6629,13 +6629,13 @@
     },
     {
       "id": "macro:cn_tsf_stock_yoy",
-      "label": "China TSF Stock YoY",
+      "label": "社会融资规模存量同比",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_observation",
       "unit": "percent_yoy",
       "frequency": "monthly",
-      "source": "People's Bank of China",
+      "source": "中国人民银行",
       "source_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/index.html",
       "pit_status": "frozen_official_release_snapshots_partial_coverage",
       "updated_at": "2026-10-07T16:51:53+08:00",
@@ -6645,7 +6645,7 @@
         "through": "2025-08-31",
         "latest_available_date": "2025-09-12"
       },
-      "notes": "Values and publication dates are from the linked original PBOC report. The indexed archive begins around 2009; earlier reports are not filled. TSF scope/methodology changes are retained as originally reported. Values are only included when explicit. Observation coverage: 2014-12-31 through 2025-08-31. December values from annual stock reports are included when the official report explicitly provides the year-end YoY rate.",
+      "notes": "数值和发布日期来自人民银行原始报告。社融统计范围和方法变化按原始发布保留；仅纳入报告明确给出的数值。索引归档约从 2009 年开始。 观测区间为 2014-12-31 至 2025-08-31。",
       "points": [
         {
           "date": "2014-12-31",
@@ -7603,23 +7603,23 @@
     },
     {
       "id": "factor:china:growth",
-      "label": "China Growth",
+      "label": "中国增长",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_factor",
       "unit": "z-score",
       "frequency": "monthly",
-      "source": "macro-regime-quant China baseline",
+      "source": "中国宏观量化基线模型",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "official_release_as_of_panel_partial_coverage",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 24,
         "from": "2024-10-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Factor values use the available official-release snapshot set; history is partial.",
+      "notes": "因子值基于现有官方发布快照计算，历史覆盖不完整。",
       "points": [
         {
           "date": "2024-10-31",
@@ -7769,23 +7769,23 @@
     },
     {
       "id": "factor:china:inflation",
-      "label": "China Inflation",
+      "label": "中国通胀",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_factor",
       "unit": "z-score",
       "frequency": "monthly",
-      "source": "macro-regime-quant China baseline",
+      "source": "中国宏观量化基线模型",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "official_release_as_of_panel_partial_coverage",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 23,
         "from": "2024-11-30",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Factor values use the available official-release snapshot set; history is partial.",
+      "notes": "因子值基于现有官方发布快照计算，历史覆盖不完整。",
       "points": [
         {
           "date": "2024-11-30",
@@ -7929,23 +7929,23 @@
     },
     {
       "id": "factor:china:liquidity",
-      "label": "China Liquidity",
+      "label": "中国流动性",
       "domain": "macro_china",
       "country": "China",
       "kind": "macro_factor",
       "unit": "z-score",
       "frequency": "monthly",
-      "source": "macro-regime-quant China baseline",
+      "source": "中国宏观量化基线模型",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "official_release_as_of_panel_partial_coverage",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 166,
         "from": "2012-12-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Factor values use the available official-release snapshot set; history is partial.",
+      "notes": "因子值基于现有官方发布快照计算，历史覆盖不完整。",
       "points": [
         {
           "date": "2012-12-31",
@@ -8947,23 +8947,23 @@
     },
     {
       "id": "macro:us_10y_real",
-      "label": "US 10Y Real Yield",
+      "label": "美国 10 年期实际收益率",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_observation",
       "unit": "percent",
       "frequency": "monthly",
-      "source": "FRED DFII10 (latest vintage)",
+      "source": "FRED（圣路易斯联储数据库）· DFII10（当前修订值）",
       "source_url": "https://fred.stlouisfed.org/series/DFII10",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 285,
         "from": "2003-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Latest revised history; configured release lag is approximate.",
+      "notes": "使用 FRED 当前可见的修订历史；配置中的发布日期滞后为近似估算，历史数值可能被修订。",
       "points": [
         {
           "date": "2003-01-31",
@@ -10679,23 +10679,23 @@
     },
     {
       "id": "macro:us_core_cpi",
-      "label": "US Core CPI",
+      "label": "美国核心居民消费价格指数",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_observation",
       "unit": "index_points",
       "frequency": "monthly",
-      "source": "FRED CPILFESL (latest vintage)",
+      "source": "FRED（圣路易斯联储数据库）· CPILFESL（当前修订值）",
       "source_url": "https://fred.stlouisfed.org/series/CPILFESL",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Latest revised history; configured release lag is approximate.",
+      "notes": "使用 FRED 当前可见的修订历史；配置中的发布日期滞后为近似估算，历史数值可能被修订。",
       "points": [
         {
           "date": "2000-01-31",
@@ -12627,23 +12627,23 @@
     },
     {
       "id": "macro:us_core_pce",
-      "label": "US Core PCE",
+      "label": "美国核心个人消费支出价格指数",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_observation",
       "unit": "index_points",
       "frequency": "monthly",
-      "source": "FRED PCEPILFE (latest vintage)",
+      "source": "FRED（圣路易斯联储数据库）· PCEPILFE（当前修订值）",
       "source_url": "https://fred.stlouisfed.org/series/PCEPILFE",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Latest revised history; configured release lag is approximate.",
+      "notes": "使用 FRED 当前可见的修订历史；配置中的发布日期滞后为近似估算，历史数值可能被修订。",
       "points": [
         {
           "date": "2000-01-31",
@@ -14575,23 +14575,23 @@
     },
     {
       "id": "macro:us_high_yield_oas",
-      "label": "US High Yield OAS",
+      "label": "美国高收益债信用利差",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_observation",
       "unit": "percent",
       "frequency": "monthly",
-      "source": "FRED BAMLH0A0HYM2 (latest vintage)",
+      "source": "FRED（圣路易斯联储数据库）· BAMLH0A0HYM2（当前修订值）",
       "source_url": "https://fred.stlouisfed.org/series/BAMLH0A0HYM2",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 36,
         "from": "2023-10-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "ICE BofA US High Yield Index option-adjusted spread.",
+      "notes": "使用 FRED 当前可见的修订历史；配置中的发布日期滞后为近似估算，历史数值可能被修订。",
       "points": [
         {
           "date": "2023-10-31",
@@ -14813,23 +14813,23 @@
     },
     {
       "id": "macro:us_m2",
-      "label": "US M2",
+      "label": "美国 M2 货币供应量",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_observation",
       "unit": "billions_usd",
       "frequency": "monthly",
-      "source": "FRED M2SL (latest vintage)",
+      "source": "FRED（圣路易斯联储数据库）· M2SL（当前修订值）",
       "source_url": "https://fred.stlouisfed.org/series/M2SL",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Latest revised history; configured release lag is approximate.",
+      "notes": "使用 FRED 当前可见的修订历史；配置中的发布日期滞后为近似估算，历史数值可能被修订。",
       "points": [
         {
           "date": "2000-01-31",
@@ -16761,23 +16761,23 @@
     },
     {
       "id": "macro:us_nfci",
-      "label": "US Financial Conditions Index",
+      "label": "美国金融状况指数",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_observation",
       "unit": "index_points",
       "frequency": "monthly",
-      "source": "FRED NFCI (latest vintage)",
+      "source": "FRED（圣路易斯联储数据库）· NFCI（当前修订值）",
       "source_url": "https://fred.stlouisfed.org/series/NFCI",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Chicago Fed NFCI. Higher = tighter financial conditions.",
+      "notes": "使用 FRED 当前可见的修订历史；配置中的发布日期滞后为近似估算，历史数值可能被修订。",
       "points": [
         {
           "date": "2000-01-31",
@@ -18709,23 +18709,23 @@
     },
     {
       "id": "macro:us_ppi_all_commodities",
-      "label": "US PPI All Commodities",
+      "label": "美国全商品生产者价格指数",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_observation",
       "unit": "index_points",
       "frequency": "monthly",
-      "source": "FRED PPIACO (latest vintage)",
+      "source": "FRED（圣路易斯联储数据库）· PPIACO（当前修订值）",
       "source_url": "https://fred.stlouisfed.org/series/PPIACO",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Latest revised history; configured release lag is approximate.",
+      "notes": "使用 FRED 当前可见的修订历史；配置中的发布日期滞后为近似估算，历史数值可能被修订。",
       "points": [
         {
           "date": "2000-01-31",
@@ -20657,23 +20657,23 @@
     },
     {
       "id": "macro:us_unemployment",
-      "label": "US Unemployment Rate",
+      "label": "美国失业率",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_observation",
       "unit": "percent",
       "frequency": "monthly",
-      "source": "FRED UNRATE (latest vintage)",
+      "source": "FRED（圣路易斯联储数据库）· UNRATE（当前修订值）",
       "source_url": "https://fred.stlouisfed.org/series/UNRATE",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Latest revised history; configured release lag is approximate.",
+      "notes": "使用 FRED 当前可见的修订历史；配置中的发布日期滞后为近似估算，历史数值可能被修订。",
       "points": [
         {
           "date": "2000-01-31",
@@ -22605,23 +22605,23 @@
     },
     {
       "id": "factor:us:growth",
-      "label": "US Growth",
+      "label": "美国增长",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_factor",
       "unit": "z-score",
       "frequency": "monthly",
-      "source": "macro-regime-quant US baseline / latest FRED vintage",
+      "source": "美国宏观量化基线模型 / FRED 当前修订值",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 273,
         "from": "2004-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Not safe for historical as-of research until ALFRED vintages are wired into the panel.",
+      "notes": "在 ALFRED 历史版本接入因子面板前，不可用于安全的历史时点研究。",
       "points": [
         {
           "date": "2004-01-31",
@@ -24265,23 +24265,23 @@
     },
     {
       "id": "factor:us:inflation",
-      "label": "US Inflation",
+      "label": "美国通胀",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_factor",
       "unit": "z-score",
       "frequency": "monthly",
-      "source": "macro-regime-quant US baseline / latest FRED vintage",
+      "source": "美国宏观量化基线模型 / FRED 当前修订值",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 273,
         "from": "2004-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Not safe for historical as-of research until ALFRED vintages are wired into the panel.",
+      "notes": "在 ALFRED 历史版本接入因子面板前，不可用于安全的历史时点研究。",
       "points": [
         {
           "date": "2004-01-31",
@@ -25925,23 +25925,23 @@
     },
     {
       "id": "factor:us:real_rate",
-      "label": "US Real Rate",
+      "label": "美国实际利率",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_factor",
       "unit": "z-score",
       "frequency": "monthly",
-      "source": "macro-regime-quant US baseline / latest FRED vintage",
+      "source": "美国宏观量化基线模型 / FRED 当前修订值",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 249,
         "from": "2006-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Not safe for historical as-of research until ALFRED vintages are wired into the panel.",
+      "notes": "在 ALFRED 历史版本接入因子面板前，不可用于安全的历史时点研究。",
       "points": [
         {
           "date": "2006-01-31",
@@ -27441,23 +27441,23 @@
     },
     {
       "id": "factor:us:liquidity",
-      "label": "US Liquidity",
+      "label": "美国流动性",
       "domain": "macro_us",
       "country": "United States",
       "kind": "macro_factor",
       "unit": "z-score",
       "frequency": "monthly",
-      "source": "macro-regime-quant US baseline / latest FRED vintage",
+      "source": "美国宏观量化基线模型 / FRED 当前修订值",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "coverage": {
         "observations": 273,
         "from": "2004-01-31",
         "through": "2026-09-30",
         "latest_available_date": "2026-09-30"
       },
-      "notes": "Not safe for historical as-of research until ALFRED vintages are wired into the panel.",
+      "notes": "在 ALFRED 历史版本接入因子面板前，不可用于安全的历史时点研究。",
       "points": [
         {
           "date": "2004-01-31",

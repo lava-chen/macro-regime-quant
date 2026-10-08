@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-10-08T09:42:35Z",
+  "generated_at": "2026-10-08T10:04:21Z",
   "countries": [
     {
       "country": "China",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "pit_status": "official_release_as_of_panel_partial_coverage",
-      "definition": "Growth × Inflation quadrant",
+      "definition": "增长 × 通胀四象限",
       "history": [
         {
           "date": "2024-11-30",
@@ -127,9 +127,9 @@
     },
     {
       "country": "United States",
-      "updated_at": "2026-10-08T09:42:35Z",
+      "updated_at": "2026-10-08T10:04:21Z",
       "pit_status": "latest_revised_values_not_pit_safe",
-      "definition": "Growth × Inflation quadrant",
+      "definition": "增长 × 通胀四象限",
       "history": [
         {
           "date": "2004-01-31",
