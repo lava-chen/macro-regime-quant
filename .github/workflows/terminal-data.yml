@@ -2,8 +2,8 @@ name: Terminal public data refresh
 
 on:
   schedule:
-    # 07:30 Asia/Shanghai, weekdays. US markets have closed by this point.
-    - cron: "30 23 * * 1-5"
+    # 07:30 Asia/Shanghai Monday-Friday = 23:30 UTC Sunday-Thursday.
+    - cron: "30 23 * * 0-4"
     # Refresh the slower official China release archive once per month.
     - cron: "15 1 16 * *"
   workflow_dispatch:
