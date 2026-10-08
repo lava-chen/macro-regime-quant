@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#080d12" />
+    <meta
+      name="description"
+      content="Macro Quant Terminal — a private macro and markets research workspace."
+    />
+    <title>Macro Quant Terminal</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="terminal-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#markets" aria-label="Macro Quant Terminal home">
+          <span class="brand-mark">M<span>Q</span></span>
+          <span class="brand-copy">
+            <strong>MACRO QUANT</strong>
+            <small>TERMINAL <i>v0.1</i></small>
+          </span>
+        </a>
+        <div class="sidebar-rule"></div>
+        <p class="rail-label">WORKSPACE</p>
+        <nav class="nav-list" aria-label="Terminal sections">
+          <button class="nav-item active" data-page="markets" aria-current="page">
+            <span class="nav-glyph">◫</span><span>Markets</span><kbd>01</kbd>
+          </button>
+          <button class="nav-item" data-page="macro">
+            <span class="nav-glyph">⌁</span><span>Macro</span><kbd>02</kbd>
+          </button>
+          <button class="nav-item" data-page="data">
+            <span class="nav-glyph">▤</span><span>Data Status</span><kbd>03</kbd>
+          </button>
+          <button class="nav-item" data-page="research">
+            <span class="nav-glyph">⌘</span><span>Research</span><kbd>04</kbd>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="privacy-card">
+            <span class="privacy-dot"></span>
+            <div><strong>PRIVATE WORKSPACE</strong><small>Public data feed only</small></div>
+          </div>
+          <div class="sidebar-foot"><span>MRQ / 0.1.0</span><span>ASIA / SHANGHAI</span></div>
+        </div>
+      </aside>
+
+      <main class="main-shell">
+        <header class="topbar">
+          <div class="breadcrumb"><span>RESEARCH SYSTEMS</span><b>/</b><strong id="breadcrumb-current">MARKETS</strong></div>
+          <div class="topbar-right">
+            <div class="feed-indicator" id="feed-indicator"><span class="feed-light"></span><span id="feed-label">CONNECTING DATA</span></div>
+            <button class="icon-button" id="refresh-button" title="Refresh public data" aria-label="Refresh data">
+              <span>↻</span>
+            </button>
+            <div class="account-chip"><span class="account-avatar">R</span><span>PRIVATE</span></div>
+          </div>
+        </header>
+
+        <div class="mobile-nav" aria-label="Terminal sections">
+          <button class="mobile-nav-item active" data-page="markets">Markets</button>
+          <button class="mobile-nav-item" data-page="macro">Macro</button>
+          <button class="mobile-nav-item" data-page="data">Data</button>
+          <button class="mobile-nav-item" data-page="research">Research</button>
+        </div>
+
+        <section class="page active" id="page-markets" data-page-view="markets">
+          <div class="page-heading heading-row">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> CROSS-ASSET MONITOR</div>
+              <h1>Markets <span class="heading-period">/ Daily</span></h1>
+              <p class="page-deck">比较主要资产价格与成交量。相对表现以所选区间首个有效交易日归一化至 100。</p>
+            </div>
+            <div class="heading-stamp"><span>DATA AS OF</span><strong id="market-asof">—</strong><small id="market-stale-state">Awaiting feed</small></div>
+          </div>
+
+          <div class="market-strip" id="market-strip"></div>
+
+          <section class="panel chart-panel">
+            <div class="panel-head chart-panel-head">
+              <div>
+                <div class="panel-kicker">PRICE ACTION <span class="tiny-live">PUBLIC FEED</span></div>
+                <h2 id="market-chart-title">Relative performance</h2>
+              </div>
+              <div class="chart-head-controls">
+                <div class="segmented" id="market-mode" aria-label="Price display mode">
+                  <button class="selected" data-mode="indexed">Indexed 100</button>
+                  <button data-mode="raw">Price</button>
+                </div>
+                <button class="quiet-button" id="market-restore">↺ <span>Reset zoom</span></button>
+              </div>
+            </div>
+            <div class="series-controls" id="market-series-controls"></div>
+            <div class="chart-toolbar">
+              <div class="range-picker" id="market-ranges">
+                <button data-range="1M">1M</button><button data-range="3M">3M</button><button data-range="6M">6M</button>
+                <button class="selected" data-range="1Y">1Y</button><button data-range="3Y">3Y</button><button data-range="5Y">5Y</button><button data-range="ALL">ALL</button>
+              </div>
+              <label class="volume-select">VOLUME <select id="volume-symbol"><option value="SPY">SPY</option></select></label>
+            </div>
+            <div class="chart-wrap" id="market-chart-wrap">
+              <div class="chart" id="market-chart" aria-label="Interactive relative performance chart"></div>
+              <div class="chart-empty hidden" id="market-chart-empty"><div class="empty-mark">⌁</div><strong>等待首个行情同步</strong><span>Yahoo Finance 历史行情尚未成功导出。图表不会填入模拟价格。</span></div>
+            </div>
+            <div class="chart-caption"><span><i class="caption-dot"></i> 每日收盘价 · Yahoo Finance adjusted close</span><span>成交量为普通成交股数，不含主动买卖方向</span></div>
+          </section>
+          <div class="under-chart-grid">
+            <section class="panel note-panel">
+              <div class="panel-kicker">READ THE TAPE</div>
+              <h3>价格与成交量</h3>
+              <p>价格使用复权收盘价。分时买卖方向、资金主动性及机构订单流不在当前数据契约内。</p>
+            </section>
+            <section class="panel coverage-panel">
+              <div class="panel-kicker">FEED HEALTH</div>
+              <div class="coverage-line"><span>Provider</span><strong id="market-provider-state">Yahoo Finance</strong></div>
+              <div class="coverage-line"><span>Last successful update</span><strong id="market-last-success">—</strong></div>
+              <div class="coverage-line"><span>History adjustments</span><strong class="warning-text">Not vintage archived</strong></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="page" id="page-macro" data-page-view="macro">
+          <div class="page-heading heading-row">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> FACTOR REGIME MONITOR</div>
+              <h1>Macro <span class="heading-period">/ China · United States</span></h1>
+              <p class="page-deck">查看实际导出的官方序列、因子 z-score 与 Growth × Inflation 状态。缺失因子不会补零。</p>
+            </div>
+            <div class="country-switch" id="country-switch"><button class="selected" data-country="China">中国</button><button data-country="United States">美国</button></div>
+          </div>
+          <div class="macro-alert" id="macro-pit-alert"></div>
+          <section class="panel chart-panel">
+            <div class="panel-head chart-panel-head">
+              <div><div class="panel-kicker">FACTOR HISTORY</div><h2>Factor levels <span class="subtle">· Z-score view is for visual scale only</span></h2></div>
+              <div class="segmented" id="macro-mode"><button class="selected" data-mode="zscore">Z-score</button><button data-mode="raw">Raw</button></div>
+            </div>
+            <div class="series-controls" id="macro-series-controls"></div>
+            <div class="chart-toolbar"><div class="range-picker" id="macro-ranges"><button data-range="1Y">1Y</button><button data-range="3Y">3Y</button><button data-range="5Y">5Y</button><button class="selected" data-range="ALL">ALL</button></div><span class="chart-aside-label" id="macro-source-label">OFFICIAL SNAPSHOTS</span></div>
+            <div class="chart-wrap macro-chart-wrap"><div class="chart" id="macro-chart" aria-label="Interactive macro factor chart"></div><div class="chart-empty hidden" id="macro-chart-empty"><div class="empty-mark">⌁</div><strong>No eligible series in this view</strong><span>选择有覆盖数据的国家与指标。</span></div></div>
+          </section>
+          <div class="macro-lower-grid">
+            <section class="panel regime-panel">
+              <div class="panel-head"><div><div class="panel-kicker">REGIME TIMELINE</div><h2 id="regime-title">China · Growth × Inflation</h2></div><span class="status-tag" id="regime-coverage">—</span></div>
+              <div class="regime-chart" id="regime-chart" aria-label="Historical macro regime timeline"></div>
+              <div class="regime-legend" id="regime-legend"></div>
+            </section>
+            <section class="panel distribution-panel">
+              <div class="panel-head"><div><div class="panel-kicker">STATE DISTRIBUTION</div><h2>Observed sample</h2></div></div>
+              <div class="distribution-list" id="regime-distribution"></div>
+              <p class="micro-note">仅统计导出的 Regime 月度记录；样本短或来源缺失时不作推断。</p>
+            </section>
+          </div>
+        </section>
+
+        <section class="page" id="page-data" data-page-view="data">
+          <div class="page-heading heading-row">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> PROVENANCE & HEALTH</div><h1>Data Status <span class="heading-period">/ Source registry</span></h1><p class="page-deck">覆盖范围、更新时间、缺失项与 point-in-time 适用状态。</p></div>
+            <div class="heading-stamp"><span>SCHEMA</span><strong id="schema-version">v—</strong><small>Public series contract</small></div>
+          </div>
+          <div class="status-cards" id="data-status-cards"></div>
+          <section class="panel table-panel">
+            <div class="panel-head"><div><div class="panel-kicker">EXPORTED SERIES</div><h2>Coverage & provenance</h2></div><span class="table-count" id="series-count">0 SERIES</span></div>
+            <div class="table-scroll"><table><thead><tr><th>Series</th><th>Country / Class</th><th>Coverage</th><th>Latest available</th><th>Source</th><th>PIT status</th></tr></thead><tbody id="series-table-body"></tbody></table></div>
+          </section>
+          <section class="warning-grid" id="data-warnings"></section>
+        </section>
+
+        <section class="page" id="page-research" data-page-view="research">
+          <div class="page-heading">
+            <div class="eyebrow"><span class="eyebrow-line"></span> RESEARCH GATE</div>
+            <h1>Research <span class="heading-period">/ Validation first</span></h1>
+            <p class="page-deck">只展示真实写出的研究结果。未验证的回测、IC 与收益统计不会以占位数值呈现。</p>
+          </div>
+          <section class="research-gate panel">
+            <div class="gate-symbol">!</div>
+            <div class="gate-copy"><div class="panel-kicker">NO VERIFIED BACKTEST EXPORT</div><h2 id="research-state">研究结果尚未接入</h2><p id="research-message">当前 reports/ 目录没有已生成结果。终端不会用模拟收益代替实际回测。</p></div>
+            <div class="gate-badge"><span class="gate-dot"></span><strong>RESULTS HIDDEN</strong><small>Until data gates pass</small></div>
+          </section>
+          <div class="research-grid">
+            <section class="panel research-card"><div class="panel-kicker">PIT GATE <span class="tag-open">OPEN</span></div><h3>ALFRED vintage integration</h3><p>当前 main 不含 #17 的 Draft 归档。归档也尚未接入 historical as-of factor panel。</p><a href="https://github.com/lava-chen/macro-regime-quant/pull/17" target="_blank" rel="noreferrer">查看 Draft PR #17 ↗</a></section>
+            <section class="panel research-card"><div class="panel-kicker">RESEARCH INTEGRATION <span class="tag-open">OPEN</span></div><h3>历史 as-of 验证</h3><p>后续验证要求包括防修订回归测试、未归档系列拒绝回退与端到端 PIT 回测。</p><a href="https://github.com/lava-chen/macro-regime-quant/issues/18" target="_blank" rel="noreferrer">查看 Issue #18 ↗</a></section>
+            <section class="panel research-card"><div class="panel-kicker">PRICE DATA <span class="tag-limited">LIMITED</span></div><h3>行情限制</h3><p>Yahoo 复权历史可以用于界面观察，但尚未通过价格来源、交易成本与样本外检验。</p><span class="inline-status">No alpha claim</span></section>
+          </div>
+          <section class="panel run-state-panel"><div class="panel-head"><div><div class="panel-kicker">ENGINE STATUS</div><h2>研究运行状态</h2></div></div><div class="engine-grid" id="engine-grid"></div></section>
+        </section>
+
+        <footer class="page-footer"><span>MACRO QUANT TERMINAL <b>·</b> PRIVATE SINGLE-USER WORKSPACE</span><span id="footer-data-note">只读公开市场与宏观数据，不含持仓、交易记录或私有实验结果。</span></footer>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

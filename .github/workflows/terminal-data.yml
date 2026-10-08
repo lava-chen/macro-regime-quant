@@ -1,0 +1,119 @@
+name: Terminal public data refresh
+
+on:
+  schedule:
+    # 07:30 Asia/Shanghai, weekdays. US markets have closed by this point.
+    - cron: "30 23 * * 1-5"
+    # Refresh the slower official China release archive once per month.
+    - cron: "15 1 16 * *"
+  workflow_dispatch:
+    inputs:
+      refresh_china:
+        description: Re-scan NBS and PBOC official releases
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches:
+      - feat/macro-quant-terminal-v01
+    paths:
+      - "config/**"
+      - "packages/**"
+      - "scripts/export_terminal_data.py"
+      - "tests/cli/test_terminal_export.py"
+      - ".github/workflows/terminal-data.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: terminal-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the code revision being refreshed
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          path: source
+
+      - name: Check out the public terminal data branch
+        uses: actions/checkout@v4
+        with:
+          ref: macro-quant-terminal-data
+          path: terminal-data
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: source/.python-version
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: source/uv.lock
+
+      - name: Install workspace and terminal data dependencies
+        working-directory: source
+        run: |
+          uv sync --locked --all-packages --group dev
+          uv sync --locked --package mrq-data --extra data --inexact
+
+      - name: Restore the last successful public data and China snapshots
+        run: |
+          mkdir -p source/data/raw/china source/data/exports/terminal-v0.1
+          if [ -d terminal-data/data/raw/china ]; then
+            cp -a terminal-data/data/raw/china/. source/data/raw/china/
+          fi
+          if [ -d terminal-data/data/exports/terminal-v0.1 ]; then
+            cp -a terminal-data/data/exports/terminal-v0.1/. source/data/exports/terminal-v0.1/
+          fi
+
+      - name: Refresh official China snapshots
+        id: china_harvest
+        if: >-
+          (github.event_name == 'workflow_dispatch' && inputs.refresh_china) ||
+          (github.event_name == 'schedule' && github.event.schedule == '15 1 16 * *')
+        continue-on-error: true
+        working-directory: source
+        run: uv run --locked macro-regime-quant collect-china-snapshots --start-year 2009 --output data/raw/china
+
+      - name: Export market and macro data
+        id: data_export
+        working-directory: source
+        env:
+          CHINA_HARVEST_OUTCOME: ${{ steps.china_harvest.outcome }}
+        run: |
+          case "$CHINA_HARVEST_OUTCOME" in
+            success) harvest_state=success ;;
+            failure) harvest_state=failed ;;
+            *) harvest_state=not_run ;;
+          esac
+          uv run --locked python scripts/export_terminal_data.py \
+            --output data/exports/terminal-v0.1 \
+            --china-harvest-state "$harvest_state"
+
+      - name: Publish data and run status while preserving last-good files
+        if: always()
+        run: |
+          mkdir -p terminal-data/data/raw/china terminal-data/data/exports/terminal-v0.1
+          cp -a source/data/raw/china/. terminal-data/data/raw/china/
+          if [ -d source/data/exports/terminal-v0.1 ]; then
+            cp -a source/data/exports/terminal-v0.1/. terminal-data/data/exports/terminal-v0.1/
+          fi
+          cd terminal-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/raw/china data/exports/terminal-v0.1
+          if git diff --cached --quiet; then
+            echo "No public data changes to publish."
+          else
+            git commit -m "data: refresh terminal public series"
+            git push origin HEAD:macro-quant-terminal-data
+          fi
