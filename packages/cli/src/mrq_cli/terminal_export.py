@@ -775,9 +775,11 @@ def export_terminal_data(
                 "countries": current_regimes,
             },
         )
-    if not (out / "backtests.json").exists():
+    backtests_path = out / "backtests.json"
+    existing_backtests = _read_json(backtests_path, {})
+    if existing_backtests.get("status") != "verified":
         _write_json_atomic(
-            out / "backtests.json",
+            backtests_path,
             {
                 "schema_version": "1.0",
                 "status": "not_exported",

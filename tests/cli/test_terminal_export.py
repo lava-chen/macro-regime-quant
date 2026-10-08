@@ -122,3 +122,42 @@ def test_successful_refresh_clears_stale_skipped_note(tmp_path) -> None:
     market_state = result["sources"]["market_prices"]
     assert market_state["state"] == "success"
     assert "note" not in market_state
+
+
+def test_not_exported_backtest_notice_is_localized_on_each_refresh(tmp_path) -> None:
+    output = tmp_path / "exports"
+    output.mkdir()
+    (output / "backtests.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "status": "not_exported",
+                "results": [],
+                "message": "No PIT-validated backtest output is available for display.",
+                "limitations": ["Issue #18 PIT acceptance criteria remain open."],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    export_terminal_data(
+        output,
+        skip_markets=True,
+        skip_us=True,
+        attempted_at="2026-01-02T00:00:00Z",
+        source_builders={
+            "china_macro": lambda: SourceResult(
+                series=[_record("factor:china:growth", "macro_china", 0.5)]
+            ),
+        },
+    )
+
+    backtests = json.loads((output / "backtests.json").read_text(encoding="utf-8"))
+    assert backtests["status"] == "not_exported"
+    assert backtests["results"] == []
+    assert backtests["message"] == "当前没有可展示且通过历史时点验证的回测结果。"
+    assert backtests["limitations"] == [
+        "第 17 号草稿 PR 中的 ALFRED 归档尚未接入历史时点因子面板。",
+        "第 18 号任务的历史时点验证验收条件尚未完成。",
+        "报告目录中没有经过验证的滚动样本外或样本外运行结果。",
+    ]
