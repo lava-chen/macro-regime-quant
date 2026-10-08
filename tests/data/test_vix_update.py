@@ -5,7 +5,6 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-
 MODULE = runpy.run_path(str(Path(__file__).resolve().parents[2] / "scripts/update_vix.py"))
 generate_payloads = MODULE["generate_payloads"]
 check_existing_history = MODULE["check_existing_history"]
