@@ -157,3 +157,19 @@ The panel handed to your function is point-in-time, and forward returns start
 strictly after the signal, so a strong result cannot come from the test peeking
 at the future. See [docs/research_loop.md](docs/research_loop.md) for the full
 guide and the meaning of each column.
+
+## CBOE VIX historical data
+
+The repository tracks the historical VIX OHLC dataset imported from
+[datasets/finance-vix](https://github.com/datasets/finance-vix) in
+`data/raw/vix/`. Research-ready daily and completed-month close series
+are available in the catalog as `us_vix_close` and
+`us_vix_monthly_close`. Refresh daily after US trading sessions with
+`python scripts/update_vix.py` or the dedicated scheduled GitHub Action.
+The refresh fetches the official CBOE CSV and does not require an API key.
+
+VIX is not a tradable asset and its closing value is modeled as available
+the following calendar day, not for same-close execution. See
+[data/raw/vix/README.md](data/raw/vix/README.md) for provenance, licensing
+caveats, historical-data quirks, and point-in-time assumptions.
+

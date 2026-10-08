@@ -18,6 +18,10 @@ data/raw/china/*
 !data/raw/china/*.csv
 !data/raw/china/*.meta.yaml
 !data/raw/china/china_harvest_audit.yaml
+!data/raw/vix/
+data/raw/vix/*
+!data/raw/vix/*.csv
+!data/raw/vix/README.md
 data/processed/*
 !data/processed/.gitkeep
 data/cache/*
