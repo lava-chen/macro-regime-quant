@@ -268,3 +268,19 @@ series:
     frequency: daily
     release_lag_days: 0
     notes: "US dollars per euro, noon rate. 1999 onwards."
+
+  us_vix_close:
+    provider: csv
+    symbol: vix/vix_close.csv
+    kind: macro
+    frequency: daily
+    release_lag_days: 1
+    notes: "Non-tradable CBOE VIX closing index; fixed_lag next-calendar-day availability estimate."
+
+  us_vix_monthly_close:
+    provider: csv
+    symbol: vix/vix_monthly_close.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 1
+    notes: "Completed-month CBOE VIX last trading-day CLOSE; excludes latest incomplete month."

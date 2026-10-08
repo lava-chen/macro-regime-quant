@@ -1,0 +1,39 @@
+name: Refresh CBOE VIX data
+
+on:
+  schedule:
+    # UTC Tuesday-Saturday, after the preceding US trading session.
+    - cron: "30 5 * * 2-6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-vix-main
+  cancel-in-progress: false
+
+jobs:
+  update-vix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate updater
+        run: python -m unittest discover -s tests/data -p "test_vix_update.py"
+      - name: Fetch complete VIX history from CBOE
+        run: python scripts/update_vix.py
+      - name: Commit VIX datasets only if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw/vix/*.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "data: refresh CBOE VIX history"
+            git push origin HEAD:main
+          fi
