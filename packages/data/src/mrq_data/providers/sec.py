@@ -71,12 +71,23 @@ class SecProvider:
             time.sleep(self.min_interval - elapsed)
         self._last_request = time.monotonic()
 
+    @staticmethod
+    def _require_requests():
+        try:
+            import requests
+        except ImportError as exc:  # pragma: no cover - depends on install extras
+            raise RuntimeError(
+                "The SEC provider needs the 'data' extra: "
+                "uv sync --all-packages --extra data"
+            ) from exc
+        return requests
+
     def _get_json(self, url: str, cache_name: str, *, refresh: bool = False) -> dict:
         cache_path = self.cache_dir / cache_name
         if cache_path.exists() and not refresh:
             return json.loads(cache_path.read_text(encoding="utf-8"))
 
-        import requests  # imported lazily: the core/data layers must not require it
+        requests = self._require_requests()
 
         self._throttle()
         response = requests.get(
