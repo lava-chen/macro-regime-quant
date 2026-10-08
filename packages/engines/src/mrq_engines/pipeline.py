@@ -140,6 +140,7 @@ def build_country_factors(
     raw_panel: pd.DataFrame,
     country_cfg: dict[str, Any],
     min_z_history: int = 36,
+    allow_missing_components: bool = False,
 ) -> pd.DataFrame:
     """Build transparent composite factors from a monthly point-in-time panel."""
 
@@ -150,6 +151,11 @@ def build_country_factors(
         weights: dict[str, float] = {}
 
         for component_name, component_cfg in factor_cfg["components"].items():
+            source = component_cfg["source"]
+            if source not in raw_panel.columns:
+                if allow_missing_components:
+                    continue
+                raise KeyError(f"Missing source {source!r} required by factor {factor_name!r}")
             components[component_name] = _component_series(
                 raw_panel,
                 component_cfg,
@@ -157,11 +163,16 @@ def build_country_factors(
             )
             weights[component_name] = float(component_cfg.get("weight", 1.0))
 
-        component_frame = pd.DataFrame(components)
+        if not components:
+            result[factor_name] = pd.Series(float("nan"), index=raw_panel.index, dtype=float)
+            continue
+
+        component_frame = pd.DataFrame(components, index=raw_panel.index)
+        configured_minimum = int(factor_cfg.get("min_components", len(components)))
         result[factor_name] = build_composite_factor(
             component_frame,
             weights=weights,
-            min_components=int(factor_cfg.get("min_components", len(components))),
+            min_components=configured_minimum,
         )
 
     return pd.DataFrame(result)
@@ -169,6 +180,29 @@ def build_country_factors(
 
 def load_factor_config(path: str | Path) -> dict[str, Any]:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+
+
+def country_source_coverage(
+    country_key: str,
+    catalog_path: str | Path = "config/data_catalog.yaml",
+    factor_path: str | Path = "config/factors.yaml",
+) -> dict[str, list[str]]:
+    """Report configured snapshot presence without contacting data providers."""
+
+    factor_cfg = load_factor_config(factor_path)[country_key]
+    sources = required_sources(factor_cfg)
+    catalog = load_catalog(catalog_path)
+    csv_root = default_provider_registry()["csv"].root
+    snapshot_sources = [key for key in sources if catalog[key].provider == "csv"]
+    present = [key for key in snapshot_sources if (csv_root / catalog[key].symbol).is_file()]
+    missing = [key for key in snapshot_sources if key not in present]
+    provider_sources = [key for key in sources if catalog[key].provider != "csv"]
+    return {
+        "configured_sources": sources,
+        "present_snapshots": present,
+        "missing_snapshots": missing,
+        "provider_backed_sources": provider_sources,
+    }
 
 
 def required_sources(country_cfg: dict[str, Any]) -> list[str]:
@@ -187,10 +221,25 @@ def _build_country_baseline(
     end: str | None,
     min_z_history: int,
     availability_policy: str = "all",
+    allow_partial_sources: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     end = end or pd.Timestamp.today().strftime("%Y-%m-%d")
     factor_cfg = load_factor_config(factor_path)[country_key]
     sources = required_sources(factor_cfg)
+    catalog = load_catalog(catalog_path)
+    csv_root = default_provider_registry()["csv"].root
+    missing = [
+        key
+        for key in sources
+        if catalog[key].provider == "csv" and not (csv_root / catalog[key].symbol).is_file()
+    ]
+    if missing and not allow_partial_sources:
+        raise FileNotFoundError(
+            "Missing configured snapshot files: "
+            f"{sorted(missing)}. Pass allow_partial_sources=True only for a documented partial run."
+        )
+    if allow_partial_sources:
+        sources = [key for key in sources if key not in missing]
     raw = load_monthly_panel(
         catalog_path,
         sources,
@@ -198,7 +247,12 @@ def _build_country_baseline(
         end=end,
         availability_policy=availability_policy,
     )
-    factors = build_country_factors(raw, factor_cfg, min_z_history=min_z_history)
+    factors = build_country_factors(
+        raw,
+        factor_cfg,
+        min_z_history=min_z_history,
+        allow_missing_components=allow_partial_sources,
+    )
     regimes = classify_regime(factors["growth"], factors["inflation"])
     return raw, factors, regimes
 
@@ -233,6 +287,7 @@ def build_china_baseline(
     end: str | None = None,
     min_z_history: int = 36,
     availability_policy: str = "official_release_only",
+    allow_partial_sources: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """Build China factors from snapshots with an explicit date-quality policy.
 
@@ -248,4 +303,5 @@ def build_china_baseline(
         end,
         min_z_history,
         availability_policy,
+        allow_partial_sources,
     )

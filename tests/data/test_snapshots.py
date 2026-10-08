@@ -46,6 +46,31 @@ def test_point_in_time_snapshot_requires_available_date(tmp_path: Path):
     assert result.availability_basis_counts["official_release"] == 2
 
 
+def test_monthly_period_release_may_precede_month_end_but_not_period_start(tmp_path: Path):
+    path = _write_snapshot(tmp_path)
+    frame = pd.read_csv(path)
+    frame["observation_period"] = ["2025-01", "2025-02"]
+    frame.loc[0, "available_date"] = "2025-01-27"
+    frame.to_csv(path, index=False)
+
+    result = validate_snapshot(path)
+    assert result.rows == 2
+
+    frame.loc[0, "available_date"] = "2024-12-31"
+    frame.to_csv(path, index=False)
+    with pytest.raises(ValueError, match="observation period start"):
+        validate_snapshot(path)
+
+
+def test_snapshot_requires_source_value_url_to_be_http(tmp_path: Path):
+    path = _write_snapshot(tmp_path)
+    frame = pd.read_csv(path)
+    frame["source_value_url"] = "file:///tmp/source"
+    frame.to_csv(path, index=False)
+    with pytest.raises(ValueError, match=r"source_value_url must be an http\(s\) URL"):
+        validate_snapshot(path)
+
+
 def test_snapshot_rejects_missing_available_date_in_strict_mode(tmp_path: Path):
     path = _write_snapshot(tmp_path, include_available=False)
     with pytest.raises(ValueError, match="available_date"):

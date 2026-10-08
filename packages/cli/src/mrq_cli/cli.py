@@ -5,10 +5,12 @@ from pathlib import Path
 
 import pandas as pd
 import yaml
+from mrq_data.china_harvest import collect_china_snapshots
 from mrq_data.snapshots import validate_snapshot
 from mrq_engines.pipeline import (
     build_china_baseline,
     build_us_baseline,
+    country_source_coverage,
     load_monthly_panel,
 )
 from mrq_research.idea import IdeaError, evaluate_idea, load_signal_function
@@ -44,6 +46,20 @@ def build_parser() -> argparse.ArgumentParser:
         default="official_release_only",
         help="Default includes only row dates backed by an official release document",
     )
+    china.add_argument(
+        "--allow-partial-sources",
+        action="store_true",
+        help="Build present China sources only and leave under-sourced factors missing",
+    )
+
+    collect = sub.add_parser(
+        "collect-china-snapshots",
+        help="Harvest NBS and PBOC original release pages with row-level evidence",
+    )
+    collect.add_argument("--start-year", type=int, default=2005)
+    collect.add_argument("--end-year", type=int, default=None)
+    collect.add_argument("--output", default="data/raw/china")
+    collect.add_argument("--workers", type=int, default=2)
 
     snapshot = sub.add_parser(
         "validate-snapshot",
@@ -223,20 +239,40 @@ def main() -> None:
         return
 
     if args.command == "build-china-baseline":
+        coverage = country_source_coverage("china")
+        if coverage["missing_snapshots"] and not args.allow_partial_sources:
+            raise FileNotFoundError(
+                "Missing configured China snapshots: "
+                f"{coverage['missing_snapshots']}. Collect sources or pass "
+                "--allow-partial-sources for a documented partial run."
+            )
         _write_baseline(
             *build_china_baseline(
                 start=args.start,
                 end=args.end,
                 min_z_history=args.min_z_history,
                 availability_policy=args.availability_policy,
+                allow_partial_sources=args.allow_partial_sources,
             ),
             output=args.output,
             run_metadata={
                 "country": "china",
                 "availability_policy": args.availability_policy,
                 "macro_vintage": "frozen official release snapshots",
+                "partial_sources": args.allow_partial_sources,
+                "source_coverage": coverage,
             },
         )
+        return
+
+    if args.command == "collect-china-snapshots":
+        audit = collect_china_snapshots(
+            args.output,
+            start_year=args.start_year,
+            end_year=args.end_year,
+            max_workers=args.workers,
+        )
+        print(yaml.safe_dump(audit, sort_keys=False, allow_unicode=True))
         return
 
     if args.command == "validate-snapshot":
