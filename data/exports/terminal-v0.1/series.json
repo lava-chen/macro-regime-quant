@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-10-08T09:36:31Z",
-  "source_commit": "c6298054ac1668a726bac65c928c6c5eb04ca414",
+  "generated_at": "2026-10-08T09:42:35Z",
+  "source_commit": "28a7f7414c3f15d206ca0c4fcac5750bd184169e",
   "model_version": "macro-v1+9eb5a5ddc5",
   "series": [
     {
@@ -15,7 +15,7 @@
       "source": "Yahoo Finance via yfinance",
       "source_url": "https://finance.yahoo.com/quote/SPY/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
@@ -114,7 +114,7 @@
       "source": "Yahoo Finance via yfinance",
       "source_url": "https://finance.yahoo.com/quote/QQQ/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
@@ -213,7 +213,7 @@
       "source": "Yahoo Finance via yfinance",
       "source_url": "https://finance.yahoo.com/quote/GLD/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
@@ -312,7 +312,7 @@
       "source": "Yahoo Finance via yfinance",
       "source_url": "https://finance.yahoo.com/quote/TLT/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
@@ -411,7 +411,7 @@
       "source": "Yahoo Finance via yfinance",
       "source_url": "https://finance.yahoo.com/quote/DBC/",
       "pit_status": "adjusted_history_without_vintage_archive",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 11,
         "from": "2026-09-23",
@@ -7612,7 +7612,7 @@
       "source": "macro-regime-quant China baseline",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "official_release_as_of_panel_partial_coverage",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 24,
         "from": "2024-10-31",
@@ -7778,7 +7778,7 @@
       "source": "macro-regime-quant China baseline",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "official_release_as_of_panel_partial_coverage",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 23,
         "from": "2024-11-30",
@@ -7938,7 +7938,7 @@
       "source": "macro-regime-quant China baseline",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "official_release_as_of_panel_partial_coverage",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 166,
         "from": "2012-12-31",
@@ -8956,7 +8956,7 @@
       "source": "FRED DFII10 (latest vintage)",
       "source_url": "https://fred.stlouisfed.org/series/DFII10",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 285,
         "from": "2003-01-31",
@@ -10688,7 +10688,7 @@
       "source": "FRED CPILFESL (latest vintage)",
       "source_url": "https://fred.stlouisfed.org/series/CPILFESL",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
@@ -12636,7 +12636,7 @@
       "source": "FRED PCEPILFE (latest vintage)",
       "source_url": "https://fred.stlouisfed.org/series/PCEPILFE",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
@@ -14584,7 +14584,7 @@
       "source": "FRED BAMLH0A0HYM2 (latest vintage)",
       "source_url": "https://fred.stlouisfed.org/series/BAMLH0A0HYM2",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 36,
         "from": "2023-10-31",
@@ -14822,7 +14822,7 @@
       "source": "FRED M2SL (latest vintage)",
       "source_url": "https://fred.stlouisfed.org/series/M2SL",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
@@ -16770,7 +16770,7 @@
       "source": "FRED NFCI (latest vintage)",
       "source_url": "https://fred.stlouisfed.org/series/NFCI",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
@@ -18718,7 +18718,7 @@
       "source": "FRED PPIACO (latest vintage)",
       "source_url": "https://fred.stlouisfed.org/series/PPIACO",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
@@ -20666,7 +20666,7 @@
       "source": "FRED UNRATE (latest vintage)",
       "source_url": "https://fred.stlouisfed.org/series/UNRATE",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 321,
         "from": "2000-01-31",
@@ -22614,7 +22614,7 @@
       "source": "macro-regime-quant US baseline / latest FRED vintage",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 273,
         "from": "2004-01-31",
@@ -24274,7 +24274,7 @@
       "source": "macro-regime-quant US baseline / latest FRED vintage",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 273,
         "from": "2004-01-31",
@@ -25934,7 +25934,7 @@
       "source": "macro-regime-quant US baseline / latest FRED vintage",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 249,
         "from": "2006-01-31",
@@ -27450,7 +27450,7 @@
       "source": "macro-regime-quant US baseline / latest FRED vintage",
       "source_url": "https://github.com/lava-chen/macro-regime-quant/blob/main/config/factors.yaml",
       "pit_status": "latest_revised_values_approximate_release_lag_not_pit_safe",
-      "updated_at": "2026-10-08T09:36:31Z",
+      "updated_at": "2026-10-08T09:42:35Z",
       "coverage": {
         "observations": 273,
         "from": "2004-01-31",
