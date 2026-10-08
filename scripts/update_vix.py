@@ -9,7 +9,7 @@ import argparse
 import csv
 import io
 import sys
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -20,12 +20,15 @@ SNAPSHOT_HEADER = "observation_date,value,available_date,availability_basis"
 
 
 def _parse_date(value: str) -> date:
-    for pattern in ("%Y-%m-%d", "%m/%d/%Y"):
+    cleaned = value.strip()
+    try:
+        return date.fromisoformat(cleaned)
+    except ValueError:
         try:
-            return datetime.strptime(value.strip(), pattern).date()
-        except ValueError:
-            pass
-    raise ValueError(f"Invalid VIX trading date: {value!r}")
+            month, day, year = (int(part) for part in cleaned.split("/"))
+            return date(year, month, day)
+        except ValueError as exc:
+            raise ValueError(f"Invalid VIX trading date: {value!r}") from exc
 
 
 def parse_daily(source_csv: str, *, min_rows: int = 5000) -> list[tuple[date, ...]]:
