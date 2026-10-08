@@ -1,4 +1,5 @@
 """Regression tests for the CBOE/finance-vix importer (no network)."""
+
 import runpy
 import unittest
 from pathlib import Path
