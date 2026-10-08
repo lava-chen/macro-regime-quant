@@ -20,5 +20,7 @@ data/raw/china/*
 !data/raw/china/china_harvest_audit.yaml
 data/processed/*
 !data/processed/.gitkeep
+data/cache/*
+!data/cache/.gitkeep
 reports/*
 !reports/.gitkeep
