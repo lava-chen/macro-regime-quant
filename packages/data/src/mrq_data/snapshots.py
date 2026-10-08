@@ -92,14 +92,35 @@ def validate_snapshot(
             raise ValueError("Non-unknown availability_basis requires available_date")
         if (basis.eq("unknown") & available.notna()).any():
             raise ValueError("Unknown availability_basis must not contain an available_date")
-        if (available.notna() & (available < observation)).any():
-            raise ValueError("available_date cannot be earlier than observation_date")
+        earliest_valid_date = observation.copy()
+        if "observation_period" in frame.columns:
+            period_prefix = (
+                frame["observation_period"]
+                .astype("string")
+                .str.extract(r"^(\d{4}-\d{2})", expand=False)
+            )
+            period_start = pd.to_datetime(period_prefix + "-01", errors="coerce")
+            earliest_valid_date = period_start.fillna(observation)
+        if (available.notna() & (available < earliest_valid_date)).any():
+            message = (
+                "available_date cannot be earlier than the observation period start"
+                if "observation_period" in frame.columns
+                else "available_date cannot be earlier than observation_date"
+            )
+            raise ValueError(message)
     else:
         available = pd.Series(pd.NaT, index=frame.index)
         if basis.ne("unknown").any():
             raise ValueError(
                 "Snapshots without available_date may only use unknown availability_basis"
             )
+
+    if "source_value_url" in frame.columns:
+        value_sources = frame["source_value_url"].astype("string").str.strip()
+        if value_sources.isna().any() or value_sources.eq("").any():
+            raise ValueError("source_value_url must be populated when the column is present")
+        if not value_sources.str.startswith(("https://", "http://")).all():
+            raise ValueError("source_value_url must be an http(s) URL")
 
     evidence = (
         frame["availability_evidence_url"].astype("string").str.strip()

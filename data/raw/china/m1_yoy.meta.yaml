@@ -1,0 +1,14 @@
+series_key: cn_m1
+source_name: People's Bank of China
+source_url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/index.html
+frequency: monthly
+unit: percent_yoy
+downloaded_at: '2026-10-07T16:41:31+08:00'
+reported_as: yoy_percent
+revision_policy: frozen_value_as_reported_in_each_original_release_document
+notes: 'Values and publication dates are from the linked original PBOC report. The
+  indexed archive begins around 2009; earlier reports are not filled. M1 definition
+  changes are retained as originally reported; historical breaks are not backfilled.
+  Observation coverage: 2009-11-30 through 2026-08-31. The 2011-05 value is extracted
+  from an official PBOC PDF attachment; the HTML release page is the publication-date
+  evidence.'

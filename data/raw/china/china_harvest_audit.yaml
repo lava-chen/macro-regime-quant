@@ -1,0 +1,150 @@
+requested_start_year: 2005
+requested_end_year: 2026
+harvested_at: '2026-10-07T17:12:45+08:00'
+release_date_policy: Only dates on original official release pages are accepted. Annual
+  retail Dec values are extracted only from the explicit December sentence; annual
+  FAI values remain YTD YoY. URL timestamps and schedules are never treated as actual
+  publication dates.
+sources:
+  nbs:
+    source: NBS
+    listing_url: https://www.stats.gov.cn/sj/zxfb/
+    requested_start_year: 2021
+    requested_end_year: 2026
+    listing_pages_scanned: 67
+    candidate_articles: 342
+    series:
+      cn_industrial_production:
+        rows: 55
+        first_observation: '2021-09-30'
+        last_observation: '2026-08-31'
+        confirmed_release_dates: 55
+        unknown_release_dates: 0
+      cn_retail_sales:
+        rows: 54
+        first_observation: '2021-10-31'
+        last_observation: '2026-08-31'
+        confirmed_release_dates: 54
+        unknown_release_dates: 0
+      cn_fixed_asset_investment:
+        rows: 55
+        first_observation: '2021-09-30'
+        last_observation: '2026-08-31'
+        confirmed_release_dates: 55
+        unknown_release_dates: 0
+      cn_cpi:
+        rows: 59
+        first_observation: '2021-10-31'
+        last_observation: '2026-08-31'
+        confirmed_release_dates: 59
+        unknown_release_dates: 0
+      cn_ppi:
+        rows: 59
+        first_observation: '2021-10-31'
+        last_observation: '2026-08-31'
+        confirmed_release_dates: 59
+        unknown_release_dates: 0
+      cn_pmi_new_orders:
+        rows: 60
+        first_observation: '2021-10-31'
+        last_observation: '2026-09-30'
+        confirmed_release_dates: 60
+        unknown_release_dates: 0
+    unparsed_candidates: []
+    fetch_errors: []
+    downloaded_at: '2026-10-07T17:11:40+08:00'
+  pboc:
+    source: PBOC
+    listing_url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/index.html
+    requested_start_year: 2005
+    requested_end_year: 2026
+    listing_pages_scanned: 38
+    candidate_articles: 309
+    series:
+      cn_m1:
+        rows: 201
+        first_observation: '2009-11-30'
+        last_observation: '2026-08-31'
+        confirmed_release_dates: 201
+        unknown_release_dates: 0
+      cn_m2:
+        rows: 201
+        first_observation: '2009-11-30'
+        last_observation: '2026-08-31'
+        confirmed_release_dates: 201
+        unknown_release_dates: 0
+      cn_tsf_stock_yoy:
+        rows: 119
+        first_observation: '2014-12-31'
+        last_observation: '2025-08-31'
+        confirmed_release_dates: 119
+        unknown_release_dates: 0
+    unparsed_candidates: []
+    pdf_attachments_used:
+    - title: 2011年5月金融统计数据报告
+      url: https://www.pbc.gov.cn/eportal/fileDir/image_public/UserFiles/goutongjiaoliu/upload/File/2011%E5%B9%B45%E6%9C%88%E9%87%91%E8%9E%8D%E7%BB%9F%E8%AE%A1%E6%95%B0%E6%8D%AE%E6%8A%A5%E5%91%8A%281%29.pdf
+    fetch_errors: []
+    downloaded_at: '2026-10-07T16:51:53+08:00'
+    annual_stock_reports_used:
+    - title: 2024年社会融资规模存量统计数据报告
+      available_date: '2025-01-14'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/a11eac6f438f498796e58609b5014d6c/index.html
+      observation_period: 2024-12
+      value: 8.0
+    - title: 2023年社会融资规模存量统计数据报告
+      available_date: '2024-01-12'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/5cfb772209e24a818f816b5a4301d2f8/index.html
+      observation_period: 2023-12
+      value: 9.5
+    - title: 2022年社会融资规模存量统计数据报告
+      available_date: '2023-01-10'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/54aa3f53ef374d53a4ad4f86753ab3b0/index.html
+      observation_period: 2022-12
+      value: 9.6
+    - title: 2021年社会融资规模存量统计数据报告
+      available_date: '2022-01-12'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/cd7b8e7499964bf895939d9c25160cc1/index.html
+      observation_period: 2021-12
+      value: 10.3
+    - title: 2020年社会融资规模存量统计数据报告
+      available_date: '2021-01-12'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/ea07052cc43347288656faa124a27eaf/index.html
+      observation_period: 2020-12
+      value: 13.3
+    - title: 2019年社会融资规模存量统计数据报告
+      available_date: '2020-01-16'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/4e41ac139d6b4e18b28488005f5fce7b/index.html
+      observation_period: 2019-12
+      value: 10.7
+    - title: 2018年社会融资规模存量统计数据报告
+      available_date: '2019-01-15'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/3b0bdb22fdbc4f6ab4dfe3e3a027e4ad/index.html
+      observation_period: 2018-12
+      value: 9.8
+    - title: 2017年社会融资规模存量统计数据报告
+      available_date: '2018-01-12'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2acc176e18964f72b9884a4ad2460fd1/index.html
+      observation_period: 2017-12
+      value: 12.0
+    - title: 2016年社会融资规模存量统计数据报告
+      available_date: '2017-01-12'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/b52402a769ff4032a49c816587d801a5/index.html
+      observation_period: 2016-12
+      value: 12.8
+    - title: 2015年社会融资规模存量统计数据报告
+      available_date: '2016-01-21'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/76c1bf5d8c034cceb7be29f5fb3083e8/index.html
+      observation_period: 2015-12
+      value: 12.4
+    - title: 2014年社会融资规模存量统计数据报告
+      available_date: '2015-02-10'
+      url: https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2810586/index.html
+      observation_period: 2014-12
+      value: 14.3
+not_collected:
+- NBS core CPI commentary series.
+- China government-bond yields from China Money / ChinaBond.
+- Customs trade and SAFE external-balance series.
+- NBS releases before the current indexed archive floor require direct-link discovery.
+- PBOC monthly TSF stock releases after 2025-08 were not located in the indexed archive
+  used for this harvest.

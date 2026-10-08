@@ -29,6 +29,9 @@ class CsvProvider(DataProvider):
         df["observation_date"] = pd.to_datetime(df["observation_date"])
         columns = ["observation_date", "value"]
 
+        if "observation_period" in df.columns:
+            columns.append("observation_period")
+
         has_available_date = "available_date" in df.columns
         if has_available_date:
             df["available_date"] = pd.to_datetime(df["available_date"], errors="coerce")
@@ -45,6 +48,9 @@ class CsvProvider(DataProvider):
 
         if "availability_evidence_url" in df.columns:
             columns.append("availability_evidence_url")
+
+        if "source_value_url" in df.columns:
+            columns.append("source_value_url")
 
         if start:
             df = df[df["observation_date"] >= pd.Timestamp(start)]
