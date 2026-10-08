@@ -97,7 +97,7 @@ def test_successful_refresh_clears_stale_skipped_note(tmp_path) -> None:
                 "sources": {
                     "market_prices": {
                         "state": "not_run",
-                        "note": "This source was intentionally skipped for this run.",
+                        "note": "本次运行按设置跳过了此数据源。",
                     }
                 }
             }

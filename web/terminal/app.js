@@ -16,6 +16,24 @@ const REGIME_COLORS = {
   disinflation: "#78b9e8",
   "growth-inflation": "#d8b867",
 };
+const REGIME_LABELS = {
+  recovery: "复苏",
+  reflation: "再通胀",
+  stagflation: "滞胀",
+  disinflation: "通胀回落",
+  "growth-inflation": "增长与通胀",
+};
+const COUNTRY_LABELS = { China: "中国", "United States": "美国" };
+const DOMAIN_LABELS = { markets: "市场", macro_china: "中国宏观", macro_us: "美国宏观" };
+const KIND_LABELS = { asset_price: "资产价格", macro_observation: "宏观指标", macro_factor: "宏观因子" };
+const UNIT_LABELS = {
+  USD: "美元",
+  percent_yoy: "同比（%）",
+  percent: "百分比（%）",
+  index_points: "指数点",
+  billions_usd: "十亿美元",
+  "z-score": "标准分",
+};
 const RANGE_DAYS = { "1M": 31, "3M": 92, "6M": 183, "1Y": 365, "3Y": 1096, "5Y": 1826 };
 const state = {
   summary: {},
@@ -45,7 +63,7 @@ const fmtTimestamp = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 };
-const number = (value, digits = 2) => Number(value).toLocaleString("en-US", { maximumFractionDigits: digits, minimumFractionDigits: digits });
+const number = (value, digits = 2) => Number(value).toLocaleString("zh-CN", { maximumFractionDigits: digits, minimumFractionDigits: digits });
 const safeText = (node, value) => { node.textContent = value == null ? "" : String(value); return node; };
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -59,7 +77,7 @@ async function fetchJson(baseUrl, file, version) {
   remoteUrl.searchParams.set("v", version);
   try {
     const response = await fetch(remoteUrl, { cache: "no-store", mode: "cors" });
-    if (!response.ok) throw new Error(`${file}: HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`${file}：请求失败（${response.status}）`);
     return { value: await response.json(), origin: "github" };
   } catch (remoteError) {
     try {
@@ -77,7 +95,7 @@ async function loadData(showToast = false) {
   refresh.classList.add("loading");
   try {
     const feedResponse = await fetch("./data-feed.json", { cache: "no-store" });
-    if (!feedResponse.ok) throw new Error("The data-feed configuration could not be loaded.");
+    if (!feedResponse.ok) throw new Error("无法读取数据源配置。");
     const feed = await feedResponse.json();
     const version = Date.now();
     const results = await Promise.all([
@@ -93,9 +111,9 @@ async function loadData(showToast = false) {
     state.origin = results.some((item) => item.origin === "github") ? "github" : results.some((item) => item.origin === "site fallback") ? "site fallback" : "unavailable";
     initializeSelections();
     renderAll();
-    if (showToast) showToastMessage(state.origin === "github" ? "已从 GitHub 公共数据分支重新读取。" : "使用上次随站点发布的有效快照。", state.origin === "unavailable");
+    if (showToast) showToastMessage(state.origin === "github" ? "已从公开数据分支重新读取。" : "当前使用站点内上次保存的有效数据。", state.origin === "unavailable");
   } catch (error) {
-    setFeedState("failed", "DATA FEED ERROR");
+    setFeedState("failed", "数据读取失败");
     if (showToast) showToastMessage(error.message || "数据刷新失败。", true);
   } finally {
     refresh.classList.remove("loading");
@@ -132,9 +150,9 @@ function renderAll() {
 
 function renderFeedStatus() {
   const status = state.summary.status || "unavailable";
-  const label = status === "success" ? "FEED HEALTHY" : status === "partial" ? "FEED PARTIAL" : status === "failed" ? "LAST RUN FAILED" : "AWAITING DATA";
+  const label = status === "success" ? "数据正常" : status === "partial" ? "部分数据可用" : status === "failed" ? "最近更新失败" : "等待数据";
   setFeedState(status === "failed" ? "failed" : status === "success" ? "success" : "partial", label);
-  safeText($("market-asof"), latestMarketDate() ? fmtDate(latestMarketDate()) : "NO MARKET DATA");
+  safeText($("market-asof"), latestMarketDate() ? fmtDate(latestMarketDate()) : "暂无行情");
   safeText($("market-stale-state"), sourceFreshness("market_prices"));
   safeText($("market-provider-state"), sourceRunLabel("market_prices"));
   safeText($("market-last-success"), fmtTimestamp(state.summary.sources?.market_prices?.last_success_at));
@@ -142,18 +160,18 @@ function renderFeedStatus() {
 
 function sourceFreshness(name) {
   const source = state.summary.sources?.[name];
-  if (!source) return "No successful sync yet";
-  if (source.state === "failed") return "Last refresh failed · previous data retained";
-  if (source.state === "not_run") return "Awaiting first market sync";
-  return `Updated ${fmtTimestamp(source.last_success_at)}`;
+  if (!source) return "暂无成功更新记录";
+  if (source.state === "failed") return "最近更新失败 · 保留此前有效数据";
+  if (source.state === "not_run") return "等待首次行情同步";
+  return `最近更新于 ${fmtTimestamp(source.last_success_at)}`;
 }
 
 function sourceRunLabel(name) {
   const source = state.summary.sources?.[name];
-  if (!source) return "Awaiting first run";
-  if (source.state === "failed") return "Refresh failed · last good kept";
-  if (source.state === "not_run") return "Not yet synchronized";
-  return "Connected · daily bars";
+  if (!source) return "等待首次运行";
+  if (source.state === "failed") return "更新失败 · 保留此前有效数据";
+  if (source.state === "not_run") return "本次未运行";
+  return "已连接 · 日线数据";
 }
 
 function latestMarketDate() {
@@ -175,7 +193,7 @@ function renderMarketPage() {
     const swatch = el("i", "asset-swatch");
     swatch.style.background = ASSET_COLORS[ticker] || PALETTE[index];
     tickerNode.append(swatch, document.createTextNode(ticker));
-    top.append(tickerNode, el("span", "market-card-label", record ? "DAILY" : "PENDING"));
+    top.append(tickerNode, el("span", "market-card-label", record ? "日线" : "等待数据"));
     card.append(top);
     const points = record?.points || [];
     if (points.length) {
@@ -183,11 +201,11 @@ function renderMarketPage() {
       const previous = points.length > 1 ? points.at(-2) : null;
       const change = previous?.value ? ((last.value / previous.value) - 1) * 100 : null;
       card.append(el("div", "market-price", `$${number(last.value)}`));
-      const move = el("div", `market-change ${change == null ? "" : change >= 0 ? "positive" : "negative"}`, change == null ? `AS OF ${last.date}` : `${change >= 0 ? "+" : ""}${number(change)}%  ·  ${last.date}`);
+      const move = el("div", `market-change ${change == null ? "" : change >= 0 ? "positive" : "negative"}`, change == null ? `截至 ${last.date}` : `${change >= 0 ? "+" : ""}${number(change)}%  ·  ${last.date}`);
       card.append(move);
     } else {
       card.append(el("div", "market-price market-card-empty", "—"));
-      card.append(el("div", "market-change", "Waiting for verified price data"));
+      card.append(el("div", "market-change", "等待有效行情数据"));
     }
     cards.append(card);
   });
@@ -210,7 +228,7 @@ function renderMarketControls(records) {
     chip.append(swatch, document.createTextNode(ticker), el("span", "check", record ? selected ? "●" : "○" : "···"));
     if (!record) {
       chip.disabled = true;
-      chip.title = "Waiting for the first successful market data export";
+      chip.title = "等待首次成功导出行情数据";
     }
     chip.addEventListener("click", () => {
       if (!record) return;
@@ -283,7 +301,7 @@ function renderMarketChart(records = state.series.filter((series) => series.doma
   const volumeTicker = volumeRecord?.symbol || volumeRecord?.id.split(":").at(-1);
   if (volumeRecord) {
     series.push({
-      name: `${volumeTicker} volume`,
+      name: `${volumeTicker} 成交量`,
       type: "bar",
       xAxisIndex: 1,
       yAxisIndex: 1,
@@ -293,7 +311,7 @@ function renderMarketChart(records = state.series.filter((series) => series.doma
       tooltip: { valueFormatter: (value) => number(value, 0) },
     });
   }
-  const modeLabel = state.marketMode === "indexed" ? "Indexed performance · base 100" : "Adjusted close · USD";
+  const modeLabel = state.marketMode === "indexed" ? "区间相对表现 · 起点 = 100" : "复权收盘价 · 美元";
   safeText($("market-chart-title"), modeLabel);
   chart.setOption({
     animation: false,
@@ -311,8 +329,8 @@ function renderMarketChart(records = state.series.filter((series) => series.doma
         if (!items?.length) return "";
         const date = fmtDate(items[0].axisValue);
         const rows = items.map((item) => {
-          const isVolume = item.seriesName.endsWith(" volume");
-          return `<div style="display:flex;justify-content:space-between;gap:18px;margin-top:5px"><span>${item.marker}${escapeHtml(item.seriesName)}</span><strong style="font-family:monospace">${isVolume ? number(item.value?.[1] ?? item.value, 0) : number(item.value?.[1] ?? item.value)}${isVolume ? "" : state.marketMode === "indexed" ? "" : " USD"}</strong></div>`;
+          const isVolume = item.seriesName.endsWith(" 成交量");
+          return `<div style="display:flex;justify-content:space-between;gap:18px;margin-top:5px"><span>${item.marker}${escapeHtml(item.seriesName)}</span><strong style="font-family:monospace">${isVolume ? number(item.value?.[1] ?? item.value, 0) : number(item.value?.[1] ?? item.value)}${isVolume ? "" : state.marketMode === "indexed" ? "" : " 美元"}</strong></div>`;
         }).join("");
         return `<div style="min-width:180px"><strong>${escapeHtml(date)}</strong>${rows}</div>`;
       },
@@ -323,8 +341,8 @@ function renderMarketChart(records = state.series.filter((series) => series.doma
       { type: "time", gridIndex: 1, axisLabel: { color: "#72818b", fontSize: 8, hideOverlap: true }, axisLine: { lineStyle: { color: "#26343e" } }, axisTick: { show: false }, splitLine: { show: false }, min: "dataMin", max: "dataMax" },
     ],
     yAxis: [
-      { type: "value", gridIndex: 0, scale: true, name: state.marketMode === "indexed" ? "INDEX" : "USD", nameTextStyle: { color: "#687882", fontSize: 8 }, axisLabel: { color: "#71808a", fontSize: 8 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: "#202c35", type: "dashed" } } },
-      { type: "value", gridIndex: 1, scale: true, name: `VOL · ${volumeTicker || ""}`, nameTextStyle: { color: "#687882", fontSize: 8 }, axisLabel: { color: "#71808a", fontSize: 8, formatter: compactNumber }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: "#1c2831", type: "dashed" } } },
+      { type: "value", gridIndex: 0, scale: true, name: state.marketMode === "indexed" ? "指数" : "美元", nameTextStyle: { color: "#687882", fontSize: 8 }, axisLabel: { color: "#71808a", fontSize: 8 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: "#202c35", type: "dashed" } } },
+      { type: "value", gridIndex: 1, scale: true, name: `${volumeTicker || ""} 成交量`, nameTextStyle: { color: "#687882", fontSize: 8 }, axisLabel: { color: "#71808a", fontSize: 8, formatter: compactNumber }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: "#1c2831", type: "dashed" } } },
     ],
     dataZoom: [
       { type: "inside", xAxisIndex: [0, 1], filterMode: "none", zoomOnMouseWheel: true, moveOnMouseMove: true },
@@ -337,9 +355,9 @@ function renderMarketChart(records = state.series.filter((series) => series.doma
 function compactNumber(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return "";
-  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(0)}K`;
+  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}十亿`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}百万`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(0)}千`;
   return String(Math.round(n));
 }
 
@@ -356,9 +374,9 @@ function renderMacroPage() {
   const us = state.country === "United States";
   alert.classList.toggle("safe", !us);
   safeText(alert, us
-    ? "美国历史因子采用当前 FRED 最新修订值与近似发布滞后。ALFRED 归档尚未接入历史 as-of 面板，因此不能用于 PIT 回测。"
-    : "中国曲线来自冻结的 NBS / PBOC 官方发布快照。覆盖不完整且时间起点不一；缺少的 Real Rate 与核心 CPI 不会填补。");
-  safeText($("macro-source-label"), us ? "FRED · LATEST REVISED · NOT PIT-SAFE" : "NBS / PBOC · OFFICIAL RELEASE SNAPSHOTS");
+    ? "美国历史因子采用 FRED 当前修订后的数据与近似发布日期。ALFRED 历史版本尚未接入历史时点面板，因此不能用于点时有效回测。"
+    : "中国曲线来自已归档的国家统计局和中国人民银行发布快照。覆盖不完整且起始时间不一；缺少的实际利率与核心 CPI 不会补填。");
+  safeText($("macro-source-label"), us ? "FRED · 当前修订值 · 非点时有效" : "国家统计局 / 中国人民银行 · 官方发布快照");
 }
 
 function renderMacroControls(records) {
@@ -372,7 +390,7 @@ function renderMacroControls(records) {
     chip.setAttribute("aria-pressed", String(selected));
     const swatch = el("i", "asset-swatch");
     swatch.style.background = PALETTE[index % PALETTE.length];
-    chip.append(swatch, document.createTextNode(record.label.replace(/^(China|US) /, "")), el("span", "check", selected ? "●" : "○"));
+    chip.append(swatch, document.createTextNode(record.label.replace(/^(中国|美国)/, "")), el("span", "check", selected ? "●" : "○"));
     chip.addEventListener("click", () => {
       if (state.selectedMacro.has(record.id)) state.selectedMacro.delete(record.id);
       else state.selectedMacro.add(record.id);
@@ -424,7 +442,7 @@ function renderMacroChart(records = state.series.filter((series) => series.domai
   const yAxis = units.map((unit, index) => ({
     type: "value",
     scale: true,
-    name: unit.toUpperCase(),
+    name: UNIT_LABELS[unit] || unit,
     nameTextStyle: { color: "#687882", fontSize: 8 },
     position: index === 0 ? "left" : "right",
     offset: index > 1 ? (index - 1) * 44 : 0,
@@ -445,7 +463,7 @@ function renderMacroChart(records = state.series.filter((series) => series.domai
       textStyle: { color: "#e0e7eb", fontSize: 10 },
       formatter: (items) => {
         if (!items?.length) return "";
-        return `<strong>${escapeHtml(fmtDate(items[0].axisValue))}</strong>${items.map((item) => `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:5px">${item.marker}${escapeHtml(item.seriesName)}<b style="font-family:monospace">${number(item.value?.[1] ?? item.value)}${state.macroMode === "zscore" ? " z" : ""}</b></div>`).join("")}`;
+        return `<strong>${escapeHtml(fmtDate(items[0].axisValue))}</strong>${items.map((item) => `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:5px">${item.marker}${escapeHtml(item.seriesName)}<b style="font-family:monospace">${number(item.value?.[1] ?? item.value)}${state.macroMode === "zscore" ? " 个标准差" : ""}</b></div>`).join("")}`;
       },
     },
     legend: { top: 7, left: 55, itemWidth: 11, itemHeight: 2, itemGap: 13, textStyle: { color: "#a2afb7", fontSize: 9 } },
@@ -462,8 +480,8 @@ function renderMacroChart(records = state.series.filter((series) => series.domai
 function renderRegimeView() {
   const record = state.regimes.find((item) => item.country === state.country);
   const history = record?.history || [];
-  safeText($("regime-title"), `${state.country} · Growth × Inflation`);
-  safeText($("regime-coverage"), history.length ? `${history.length} MONTHLY STATES` : "NO HISTORY");
+  safeText($("regime-title"), `${COUNTRY_LABELS[state.country] || state.country} · 增长 × 通胀`);
+  safeText($("regime-coverage"), history.length ? `${history.length} 个月` : "暂无历史记录");
   const chart = getChart("regime-chart");
   if (!window.echarts || !history.length) {
     chart.clear();
@@ -472,11 +490,12 @@ function renderRegimeView() {
     return;
   }
   const states = [...new Set(history.map((item) => item.regime))];
+  const displayStates = states.map(regimeLabel);
   const grouped = states.map((name) => ({
-    name,
+    name: regimeLabel(name),
     type: "scatter",
     symbolSize: 8,
-    data: history.filter((item) => item.regime === name).map((item) => [item.date, name]),
+    data: history.filter((item) => item.regime === name).map((item) => [item.date, regimeLabel(name)]),
     itemStyle: { color: regimeColor(name) },
   }));
   chart.setOption({
@@ -485,7 +504,7 @@ function renderRegimeView() {
     grid: { left: 106, right: 20, top: 17, bottom: 31 },
     tooltip: { trigger: "item", backgroundColor: "#111a21", borderColor: "#34454f", textStyle: { color: "#e0e7eb", fontSize: 9 }, formatter: (item) => `${escapeHtml(fmtDate(item.value[0]))}<br/>${escapeHtml(item.value[1])}` },
     xAxis: { type: "time", axisLabel: { color: "#72818b", fontSize: 8, hideOverlap: true }, axisLine: { lineStyle: { color: "#26343e" } }, axisTick: { show: false }, splitLine: { show: false } },
-    yAxis: { type: "category", data: states, axisLabel: { color: "#87949d", fontSize: 8 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: true, lineStyle: { color: "#1d2932", type: "dashed" } } },
+    yAxis: { type: "category", data: displayStates, axisLabel: { color: "#87949d", fontSize: 8 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: true, lineStyle: { color: "#1d2932", type: "dashed" } } },
     series: grouped,
   }, true);
   const legend = $("regime-legend");
@@ -494,7 +513,7 @@ function renderRegimeView() {
     const item = el("span");
     const swatch = el("i");
     swatch.style.background = regimeColor(name);
-    item.append(swatch, document.createTextNode(name));
+    item.append(swatch, document.createTextNode(regimeLabel(name)));
     legend.append(item);
   });
   renderRegimeDistribution(history);
@@ -505,17 +524,21 @@ function regimeColor(name) {
   return REGIME_COLORS[normalized] || (normalized.includes("stag") ? REGIME_COLORS.stagflation : normalized.includes("infl") ? REGIME_COLORS.reflation : normalized.includes("dis") ? REGIME_COLORS.disinflation : REGIME_COLORS.recovery);
 }
 
+function regimeLabel(name) {
+  return REGIME_LABELS[String(name).toLowerCase()] || String(name);
+}
+
 function renderRegimeDistribution(history) {
   const container = $("regime-distribution");
   container.replaceChildren();
-  if (!history.length) { container.append(el("div", "micro-note", "No exported regime history.")); return; }
+  if (!history.length) { container.append(el("div", "micro-note", "尚无已导出的状态历史。")); return; }
   const counts = new Map();
   history.forEach((item) => counts.set(item.regime, (counts.get(item.regime) || 0) + 1));
   [...counts.entries()].sort((a, b) => b[1] - a[1]).forEach(([name, count]) => {
     const row = el("div", "distribution-row");
     const swatch = el("i");
     swatch.style.background = regimeColor(name);
-    row.append(swatch, el("span", "", name), el("b", "", `${Math.round(count / history.length * 100)}%`));
+    row.append(swatch, el("span", "", regimeLabel(name)), el("b", "", `${Math.round(count / history.length * 100)}%`));
     container.append(row);
   });
 }
@@ -523,10 +546,10 @@ function renderRegimeDistribution(history) {
 function renderDataPage() {
   const sources = state.summary.sources || {};
   const registry = [
-    ["market_prices", "MARKETS", "Yahoo Finance", "Daily ETF prices and ordinary reported volume"],
-    ["china_macro", "CHINA MACRO", "NBS / PBOC", "Frozen official release snapshots; uneven coverage"],
-    ["china_snapshot_refresh", "CHINA HARVEST", "Official archive scan", "Monthly / manual; weekday market runs reuse frozen snapshots"],
-    ["us_macro", "US MACRO", "FRED latest vintage", "Approximate release lags; revisions remain"],
+    ["market_prices", "市场行情", "雅虎财经", "ETF 日线价格与普通成交量"],
+    ["china_macro", "中国宏观", "国家统计局 / 中国人民银行", "官方发布快照已归档；历史覆盖不均"],
+    ["china_snapshot_refresh", "中国数据归档", "官方数据归档扫描", "每月或手动扫描；工作日运行沿用既有快照"],
+    ["us_macro", "美国宏观", "FRED 最新修订值", "发布日期为近似值；历史修订仍会影响数据"],
   ];
   const cards = $("data-status-cards");
   cards.replaceChildren();
@@ -538,25 +561,25 @@ function renderDataPage() {
     const top = el("div", "status-card-top");
     top.append(el("span", "", label));
     const statusTag = el("span", `status-state ${failed ? "fail" : ready ? "" : "warn"}`);
-    statusTag.append(el("i"), document.createTextNode(failed ? "FAILED" : ready ? "READY" : "PENDING"));
+    statusTag.append(el("i"), document.createTextNode(failed ? "失败" : ready ? "可用" : "未运行"));
     top.append(statusTag);
     card.append(top, el("h3", "", provider));
-    const sourceLine = failed ? `${description}. Previous data retained.` : description;
+    const sourceLine = failed ? `${description}。已保留此前有效数据。` : description;
     card.append(el("p", "", sourceLine));
     cards.append(card);
   });
   const allSeries = state.series;
   safeText($("schema-version"), `v${state.summary.schema_version || "—"}`);
-  safeText($("series-count"), `${allSeries.length} SERIES`);
+  safeText($("series-count"), `${allSeries.length} 条序列`);
   const body = $("series-table-body");
   body.replaceChildren();
   [...allSeries].sort((a, b) => a.domain.localeCompare(b.domain) || a.label.localeCompare(b.label)).forEach((record) => {
     const row = document.createElement("tr");
     const titleCell = document.createElement("td");
     titleCell.append(document.createTextNode(record.label));
-    titleCell.append(el("span", "table-sub", `${record.kind} · ${record.unit}`));
-    const countryCell = el("td", "", `${record.country || "—"} / ${record.domain}`);
-    const coverageCell = el("td", "", `${record.coverage?.from || "—"} → ${record.coverage?.through || "—"} · ${record.coverage?.observations || 0} obs`);
+    titleCell.append(el("span", "table-sub", `${KIND_LABELS[record.kind] || "数据序列"} · ${UNIT_LABELS[record.unit] || record.unit || "未注明单位"}`));
+    const countryCell = el("td", "", `${COUNTRY_LABELS[record.country] || record.country || "—"} / ${DOMAIN_LABELS[record.domain] || record.domain}`);
+    const coverageCell = el("td", "", `${record.coverage?.from || "—"} → ${record.coverage?.through || "—"} · ${record.coverage?.observations || 0} 条`);
     const availableCell = el("td", "", fmtDate(record.coverage?.latest_available_date));
     const sourceCell = el("td", "", record.source || "—");
     const pitCell = document.createElement("td");
@@ -571,17 +594,18 @@ function renderDataPage() {
 
 function shortPitStatus(value) {
   const status = String(value || "unknown");
-  if (status.includes("not_pit_safe")) return "NOT PIT-SAFE";
-  if (status.includes("official_release")) return "OFFICIAL · PARTIAL";
-  if (status.includes("adjusted_history")) return "NO VINTAGE ARCHIVE";
-  return status.replaceAll("_", " ").toUpperCase();
+  if (status.includes("not_pit_safe") || status.includes("not_pit")) return "非点时安全";
+  if (status.includes("official_release")) return "官方快照 · 覆盖不完整";
+  if (status.includes("adjusted_history")) return "复权历史 · 无版本归档";
+  if (status.includes("unknown")) return "状态未知";
+  return "需进一步验证";
 }
 
 function renderWarnings() {
   const container = $("data-warnings");
   container.replaceChildren();
   const gates = state.summary.pit_gate || {};
-  [["CHINA COVERAGE", gates.china], ["US MACRO HISTORY", gates.united_states], ["PIT RESEARCH GATE", gates.alfred]].forEach(([title, message]) => {
+  [["中国数据覆盖", gates.china], ["美国宏观历史", gates.united_states], ["历史时点研究检查", gates.alfred], ["回测准入检查", gates.backtests]].forEach(([title, message]) => {
     if (!message) return;
     const card = el("article", "warning-card");
     card.append(el("strong", "", title), el("span", "", message));
@@ -589,12 +613,12 @@ function renderWarnings() {
   });
   (state.summary.errors || []).forEach((message) => {
     const card = el("article", "warning-card");
-    card.append(el("strong", "", "LATEST REFRESH ERROR"), el("span", "", message));
+    card.append(el("strong", "", "最近一次更新错误"), el("span", "", message));
     container.append(card);
   });
   if (state.summary.china_harvest_state === "not_run") {
     const card = el("article", "warning-card");
-    card.append(el("strong", "", "CHINA SNAPSHOT CADENCE"), el("span", "", "Official NBS/PBOC archive scans run monthly or by manual dispatch; daily runs keep the previous frozen official snapshots."));
+    card.append(el("strong", "", "中国数据归档频率"), el("span", "", "国家统计局和中国人民银行官方数据每月扫描一次，也可手动触发；日常更新会沿用此前归档的官方快照。"));
     container.append(card);
   }
 }
@@ -602,17 +626,17 @@ function renderWarnings() {
 function renderResearchPage() {
   const status = state.backtests.status || "not_exported";
   const hasResults = status === "verified" && Array.isArray(state.backtests.results) && state.backtests.results.length > 0;
-  safeText($("research-state"), hasResults ? "Verified research output available" : "研究结果尚未接入");
+  safeText($("research-state"), hasResults ? "已有通过验证的研究结果" : "研究结果尚未接入");
   safeText($("research-message"), hasResults
     ? "当前通过研究数据契约导出的结果。具体 PIT 与样本外验证状态见下方。"
-    : state.backtests.message || "当前 reports/ 目录没有已生成结果。终端不会用模拟收益代替实际回测。");
+    : state.backtests.message || "当前报告目录没有已生成结果。终端不会用模拟收益代替实际回测。");
   const container = $("engine-grid");
   container.replaceChildren();
   const engines = [
-    ["MACRO", "Factor baseline · partial", "China official snapshots; US latest-vintage source is limited."],
-    ["RESEARCH", "PIT gate · open", "Historical as-of workflow is not validated."],
-    ["VALUATION", "Python code available", "SEC / FCFF code exists; no dashboard valuation runs exported."],
-    ["FLOW", "Contract and estimate tools", "No production-grade flow dataset or dashboard run exported."],
+    ["宏观", "因子基线 · 部分可用", "中国官方快照覆盖不全；美国数据为最新修订值。"],
+    ["研究", "历史时点检查 · 未完成", "按历史时点重建数据的流程尚未通过验证。"],
+    ["估值", "已有 Python 代码", "已有 SEC / FCFF 实现；尚无估值运行结果导出到终端。"],
+    ["资金流", "基础契约与估算工具", "尚无生产级资金流数据集或终端运行结果。"],
   ];
   engines.forEach(([name, title, detail]) => {
     const cell = el("div", "engine-cell");
@@ -637,7 +661,7 @@ function showPage(page) {
       else item.removeAttribute("aria-current");
     }
   });
-  safeText($("breadcrumb-current"), page.toUpperCase().replace("DATA", "DATA STATUS"));
+  safeText($("breadcrumb-current"), ({ markets: "行情市场", macro: "宏观因子", data: "数据状态", research: "研究结果" })[page] || "研究系统");
   window.location.hash = page;
   window.setTimeout(() => Object.values(state.charts).forEach((chart) => chart?.resize()), 30);
 }
