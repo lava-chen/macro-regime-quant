@@ -148,3 +148,52 @@ print(result.metrics)
 
 The backtester is long-only, charges on turnover, and delays execution by
 `execution_lag_periods` so a signal never fills at the bar that produced it.
+
+## Company fundamentals (US): SEC EDGAR
+
+```python
+from mrq_data.providers.sec import SecProvider
+
+sec = SecProvider(user_agent="you <you@example.com>")
+METRICS = {
+    "NetCashProvidedByUsedInOperatingActivities": "ocf",
+    "PaymentsToAcquirePropertyPlantAndEquipment": "capex",
+}
+
+# as_of is mandatory — there is no way to ask for "the numbers" without
+# saying when you want to know them.
+frame = sec.fundamentals_frame("AAPL", METRICS, as_of="2018-01-01")
+```
+
+Company filings are point-in-time **by construction** and need no archive.
+EDGAR keeps every version ever filed, so `filed` is a real `available_date`
+and filtering on it is the whole mechanism:
+
+| vantage point | Apple's 2017-09-30 operating cash flow |
+|---|---|
+| 2018-01-01 | 63.598 B (filed 2017-11-03) |
+| 2019-01-01 | 64.225 B (filed 2018-11-05, restated) |
+| 2026-01-01 | 64.225 B (filed 2019-10-31) |
+
+This is the difference from macro data, where a revision replaces history and
+has to be archived separately. Here the old number was never overwritten — it
+was always there, behind a date.
+
+Facts are cached under `data/cache/sec/`; payloads run to megabytes and are
+immutable once written.
+
+### Choosing tags is the part that bites
+
+EDGAR exposes 503 us-gaap tags for a large filer and they do not mean what
+their names suggest. Apple's 2017-09-30 balance sheet:
+
+| tag | value |
+|---|---|
+| `CashAndCashEquivalentsAtCarryingValue` | 20.29 B |
+| `AvailableForSaleSecurities` | **268.89 B** |
+| `LongTermDebtNoncurrent` | 97.21 B |
+
+Taking only the first and third rows makes a net-cash company look
+net-indebted by 77 B when it held 192 B net. The provider reports tags
+faithfully; picking the right ones per business model is a modelling decision,
+and belongs with the valuation work rather than the fetch layer.

@@ -1,9 +1,25 @@
-# Research catalog. Release lags are conservative v1 approximations.
-# For revised macro series, latest-vintage FRED history is NOT publication-quality
-# point-in-time history; use ALFRED/official vintages before claiming historical alpha.
+# Research catalog.
+#
+# The FRED-backed entries point at `alfred`, not `fred`. That distinction is the
+# whole point: FRED returns the latest revised history, so a backtest driven by
+# it reads numbers that did not exist at the time. ALFRED can return the vintage
+# that stood on a given date.
+#
+# Vintage support alone is still not enough — a single pull with today's vintage
+# is still today's knowledge. The archive under data/vintages/ is what makes it
+# true. Grow it with:
+#
+#   macro-regime-quant snapshot-vintages --series us_core_cpi --start 2000-01-01
+#
+# A backtest dated t reads the newest vintage at or before t, and refuses to run
+# when the archive does not reach that far. See docs/research_loop.md.
+#
+# release_lag_days remain conservative v1 estimates. They are the floor used when
+# a series is read without an archive; the vintage clamp is what keeps the result
+# from reaching past what was knowable.
 series:
   us_industrial_production:
-    provider: fred
+    provider: alfred
     symbol: INDPRO
     kind: macro
     frequency: monthly
@@ -11,7 +27,7 @@ series:
     notes: "Industrial Production Index; approximate mid-month release lag."
 
   us_real_retail_sales:
-    provider: fred
+    provider: alfred
     symbol: RRSFS
     kind: macro
     frequency: monthly
@@ -19,21 +35,21 @@ series:
     notes: "Real Retail and Food Services Sales; latest-vintage baseline."
 
   us_payrolls:
-    provider: fred
+    provider: alfred
     symbol: PAYEMS
     kind: macro
     frequency: monthly
     release_lag_days: 7
 
   us_unemployment:
-    provider: fred
+    provider: alfred
     symbol: UNRATE
     kind: macro
     frequency: monthly
     release_lag_days: 7
 
   us_cfnai:
-    provider: fred
+    provider: alfred
     symbol: CFNAI
     kind: macro
     frequency: monthly
@@ -41,56 +57,56 @@ series:
     notes: "Chicago Fed National Activity Index; broad activity proxy."
 
   us_cpi:
-    provider: fred
+    provider: alfred
     symbol: CPIAUCSL
     kind: macro
     frequency: monthly
     release_lag_days: 14
 
   us_core_cpi:
-    provider: fred
+    provider: alfred
     symbol: CPILFESL
     kind: macro
     frequency: monthly
     release_lag_days: 14
 
   us_core_pce:
-    provider: fred
+    provider: alfred
     symbol: PCEPILFE
     kind: macro
     frequency: monthly
     release_lag_days: 30
 
   us_ppi_all_commodities:
-    provider: fred
+    provider: alfred
     symbol: PPIACO
     kind: macro
     frequency: monthly
     release_lag_days: 14
 
   us_10y:
-    provider: fred
+    provider: alfred
     symbol: DGS10
     kind: rate
     frequency: daily
     release_lag_days: 0
 
   us_10y_real:
-    provider: fred
+    provider: alfred
     symbol: DFII10
     kind: rate
     frequency: daily
     release_lag_days: 0
 
   us_m2:
-    provider: fred
+    provider: alfred
     symbol: M2SL
     kind: macro
     frequency: monthly
     release_lag_days: 28
 
   us_nfci:
-    provider: fred
+    provider: alfred
     symbol: NFCI
     kind: rate
     frequency: weekly
@@ -98,7 +114,7 @@ series:
     notes: "Chicago Fed NFCI. Higher = tighter financial conditions."
 
   us_high_yield_oas:
-    provider: fred
+    provider: alfred
     symbol: BAMLH0A0HYM2
     kind: rate
     frequency: daily
@@ -238,7 +254,7 @@ series:
   # These come from FRED rather than Yahoo so that research does not depend on
   # yfinance, which rate-limits aggressively from shared IPs.
   us_oil_wti:
-    provider: fred
+    provider: alfred
     symbol: DCOILWTICO
     kind: market
     frequency: daily
@@ -246,7 +262,7 @@ series:
     notes: "WTI crude spot price, USD/bbl. 1986 onwards."
 
   us_copper_global:
-    provider: fred
+    provider: alfred
     symbol: PCOPPUSDM
     kind: commodity
     frequency: monthly
@@ -254,7 +270,7 @@ series:
     notes: "Global price of copper, USD/metric ton. 1992 onwards."
 
   us_dollar_index_broad:
-    provider: fred
+    provider: alfred
     symbol: DTWEXBGS
     kind: fx
     frequency: daily
@@ -262,7 +278,7 @@ series:
     notes: "Nominal broad US dollar index. 2006 onwards."
 
   eurusd:
-    provider: fred
+    provider: alfred
     symbol: DEXUSEU
     kind: fx
     frequency: daily
