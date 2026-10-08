@@ -1,25 +1,36 @@
 {
   "schema_version": "1.0",
-  "status": "partial",
+  "status": "success",
   "visibility": "public_market_and_macro_series_only",
-  "attempted_at": "2026-10-08T09:16:16Z",
-  "last_success_at": "2026-10-08T09:16:16Z",
-  "source_commit": "ea0132ad8109975c63f4fd600ceb6a651f4eb007",
-  "workflow_run_id": null,
+  "attempted_at": "2026-10-08T09:34:09Z",
+  "last_success_at": "2026-10-08T09:34:09Z",
+  "source_commit": "7261c8deec6b6af18d973c117f454c8c7bc7878f",
+  "workflow_run_id": "37757522640",
   "model_version": "macro-v1+9eb5a5ddc5",
   "factor_config_present": true,
-  "series_count": 12,
-  "regime_country_count": 1,
+  "series_count": 29,
+  "regime_country_count": 2,
   "sources": {
     "market_prices": {
-      "state": "not_run",
-      "last_attempt_at": "2026-10-08T09:16:16Z",
-      "note": "This source was intentionally skipped for this run."
+      "state": "success",
+      "last_attempt_at": "2026-10-08T09:34:09Z",
+      "note": "This source was intentionally skipped for this run.",
+      "last_success_at": "2026-10-08T09:34:09Z",
+      "error": null,
+      "symbols": [
+        "DBC",
+        "GLD",
+        "QQQ",
+        "SPY",
+        "TLT"
+      ],
+      "frequency": "daily",
+      "incremental_overlap_days": 14
     },
     "china_macro": {
       "state": "success",
-      "last_attempt_at": "2026-10-08T09:16:16Z",
-      "last_success_at": "2026-10-08T09:16:16Z",
+      "last_attempt_at": "2026-10-08T09:34:09Z",
+      "last_success_at": "2026-10-08T09:34:09Z",
       "error": null,
       "snapshot_series": 9,
       "latest_official_available_date": "2026-09-30",
@@ -42,13 +53,19 @@
       ]
     },
     "us_macro": {
-      "state": "not_run",
-      "last_attempt_at": "2026-10-08T09:16:16Z",
-      "note": "This source was intentionally skipped for this run."
+      "state": "success",
+      "last_attempt_at": "2026-10-08T09:34:09Z",
+      "note": "This source was intentionally skipped for this run.",
+      "last_success_at": "2026-10-08T09:34:09Z",
+      "error": null,
+      "series_count": 12,
+      "frequency": "monthly panel; FRED observations are latest revised values",
+      "pit_status": "not_pit_safe",
+      "warning": "Configured release lags are approximations, not publication-date evidence."
     },
     "china_snapshot_refresh": {
       "state": "not_run",
-      "last_attempt_at": "2026-10-08T09:16:16Z",
+      "last_attempt_at": "2026-10-08T09:34:09Z",
       "note": "Official releases are scanned monthly or by manual dispatch."
     }
   },
