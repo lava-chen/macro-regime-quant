@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-10-08T09:16:16Z",
+  "countries": [
+    {
+      "country": "China",
+      "updated_at": "2026-10-08T09:16:16Z",
+      "pit_status": "official_release_as_of_panel_partial_coverage",
+      "definition": "Growth × Inflation quadrant",
+      "history": [
+        {
+          "date": "2024-11-30",
+          "regime": "goldilocks",
+          "available_date": "2024-11-30"
+        },
+        {
+          "date": "2024-12-31",
+          "regime": "goldilocks",
+          "available_date": "2024-12-31"
+        },
+        {
+          "date": "2025-01-31",
+          "regime": "goldilocks",
+          "available_date": "2025-01-31"
+        },
+        {
+          "date": "2025-02-28",
+          "regime": "goldilocks",
+          "available_date": "2025-02-28"
+        },
+        {
+          "date": "2025-03-31",
+          "regime": "goldilocks",
+          "available_date": "2025-03-31"
+        },
+        {
+          "date": "2025-04-30",
+          "regime": "goldilocks",
+          "available_date": "2025-04-30"
+        },
+        {
+          "date": "2025-05-31",
+          "regime": "goldilocks",
+          "available_date": "2025-05-31"
+        },
+        {
+          "date": "2025-06-30",
+          "regime": "goldilocks",
+          "available_date": "2025-06-30"
+        },
+        {
+          "date": "2025-07-31",
+          "regime": "goldilocks",
+          "available_date": "2025-07-31"
+        },
+        {
+          "date": "2025-08-31",
+          "regime": "recession",
+          "available_date": "2025-08-31"
+        },
+        {
+          "date": "2025-09-30",
+          "regime": "recession",
+          "available_date": "2025-09-30"
+        },
+        {
+          "date": "2025-10-31",
+          "regime": "recession",
+          "available_date": "2025-10-31"
+        },
+        {
+          "date": "2025-11-30",
+          "regime": "recession",
+          "available_date": "2025-11-30"
+        },
+        {
+          "date": "2025-12-31",
+          "regime": "recession",
+          "available_date": "2025-12-31"
+        },
+        {
+          "date": "2026-01-31",
+          "regime": "recession",
+          "available_date": "2026-01-31"
+        },
+        {
+          "date": "2026-02-28",
+          "regime": "recession",
+          "available_date": "2026-02-28"
+        },
+        {
+          "date": "2026-03-31",
+          "regime": "reflation",
+          "available_date": "2026-03-31"
+        },
+        {
+          "date": "2026-04-30",
+          "regime": "reflation",
+          "available_date": "2026-04-30"
+        },
+        {
+          "date": "2026-05-31",
+          "regime": "stagflation",
+          "available_date": "2026-05-31"
+        },
+        {
+          "date": "2026-06-30",
+          "regime": "stagflation",
+          "available_date": "2026-06-30"
+        },
+        {
+          "date": "2026-07-31",
+          "regime": "stagflation",
+          "available_date": "2026-07-31"
+        },
+        {
+          "date": "2026-08-31",
+          "regime": "stagflation",
+          "available_date": "2026-08-31"
+        },
+        {
+          "date": "2026-09-30",
+          "regime": "stagflation",
+          "available_date": "2026-09-30"
+        }
+      ]
+    }
+  ]
+}
