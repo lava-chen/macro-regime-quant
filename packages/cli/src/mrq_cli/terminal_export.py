@@ -561,9 +561,11 @@ def _status_for(
     status = dict(prior)
     status.update({"state": state, "last_attempt_at": attempted_at})
     if state == "success":
+        status.pop("note", None)
         status["last_success_at"] = attempted_at
         status["error"] = None
     elif state == "failed":
+        status.pop("note", None)
         status["error"] = (error or "Source refresh failed")[:600]
     if metadata:
         status.update(metadata)

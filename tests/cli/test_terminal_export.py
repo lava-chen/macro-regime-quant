@@ -86,3 +86,39 @@ def test_partial_market_refresh_keeps_symbols_not_returned(tmp_path) -> None:
     assert by_id["market:SPY"]["points"][0]["value"] == 101.0
     assert by_id["market:QQQ"]["points"][0]["value"] == 200.0
     assert result["sources"]["market_prices"]["state"] == "failed"
+
+
+def test_successful_refresh_clears_stale_skipped_note(tmp_path) -> None:
+    output = tmp_path / "exports"
+    output.mkdir()
+    (output / "summary.json").write_text(
+        json.dumps(
+            {
+                "sources": {
+                    "market_prices": {
+                        "state": "not_run",
+                        "note": "This source was intentionally skipped for this run.",
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = export_terminal_data(
+        output,
+        skip_us=True,
+        attempted_at="2026-01-02T00:00:00Z",
+        source_builders={
+            "market_prices": lambda: SourceResult(
+                series=[_record("market:SPY", "markets", 101.0)]
+            ),
+            "china_macro": lambda: SourceResult(
+                series=[_record("factor:china:growth", "macro_china", 0.5)]
+            ),
+        },
+    )
+
+    market_state = result["sources"]["market_prices"]
+    assert market_state["state"] == "success"
+    assert "note" not in market_state
