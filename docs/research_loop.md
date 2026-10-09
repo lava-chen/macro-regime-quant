@@ -263,3 +263,16 @@ would silently mislead: zero pretax income (a valuation base that does not
 exist), a figure whose `available_date` precedes its `period_end`, and frames
 mixing year-to-date with annual figures — a Q3 10-Q is nine months of activity,
 not three.
+
+
+## ALFRED archives: integration gate (2026-10-08)
+
+The `snapshot-vintages` command saves historical ALFRED snapshots, and
+`mrq_data.vintages.load_vintage(symbol, as_of)` can retrieve a stored snapshot
+as known on a requested date. **Neither `load_monthly_panel` nor the current
+`build-us-baseline`/`test-idea` pipeline currently calls `load_vintage` per
+historical decision date.** Switching catalogue entries from `fred` to
+`alfred` does not make these backtests vintage-safe: a default ALFRED fetch
+still retrieves the latest available vintage. Do not promote IC, alpha or
+regime-return conclusions to production until the pipeline uses snapshot
+history, enforces archive coverage and passes an end-to-end revision test.
