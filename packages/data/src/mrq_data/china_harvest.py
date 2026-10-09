@@ -31,9 +31,16 @@ NBS_SERIES = {
     },
     "retail_sales": {
         "series_key": "cn_retail_sales",
-        "filename": "retail_sales_yoy.csv",
+        "filename": "retail_sales_monthly_yoy.csv",
         "unit": "percent_yoy",
         "reported_as": "monthly_yoy_percent",
+        "phrase": r"社会消费品零售总额",
+    },
+    "retail_sales_ytd": {
+        "series_key": "cn_retail_sales_ytd",
+        "filename": "retail_sales_ytd_yoy.csv",
+        "unit": "percent_yoy",
+        "reported_as": "ytd_yoy_percent; Jan-Feb is a joint-period release",
         "phrase": r"社会消费品零售总额",
     },
     "fixed_asset_investment": {
@@ -49,6 +56,13 @@ NBS_SERIES = {
         "unit": "percent_yoy",
         "reported_as": "yoy_percent",
         "phrase": r"居民消费价格",
+    },
+    "core_cpi": {
+        "series_key": "cn_core_cpi",
+        "filename": "core_cpi_yoy.csv",
+        "unit": "percent_yoy",
+        "reported_as": "yoy_percent",
+        "phrase": r"核心CPI",
     },
     "ppi": {
         "series_key": "cn_ppi",
@@ -93,6 +107,7 @@ SNAPSHOT_COLUMNS = [
     "availability_evidence_url",
     "source_value_url",
     "value",
+    "source_title",
 ]
 
 
@@ -410,6 +425,15 @@ def _nbs_value(series: str, body: str, title: str) -> float | None:
     return None
 
 
+def _nbs_core_cpi_value(body: str) -> float | None:
+    """Extract core CPI only when the official release states it explicitly."""
+
+    match = re.search(r"核心\s*CPI(?:指数)?", body, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return _signed_percent(body[match.end() : match.end() + 180])
+
+
 def _unique_links(links: tuple[Link, ...], base_url: str, prefix: str) -> list[Link]:
     unique: dict[str, Link] = {}
     for link in links:
@@ -486,6 +510,8 @@ def _snapshot_row(
     evidence_url: str,
     value: float,
     value_url: str,
+    *,
+    source_title: str = "",
 ) -> dict[str, object]:
     return {
         "observation_date": observation_date,
@@ -495,6 +521,7 @@ def _snapshot_row(
         "availability_evidence_url": evidence_url if available_date else "",
         "source_value_url": value_url,
         "value": value,
+        "source_title": source_title,
     }
 
 
@@ -514,22 +541,30 @@ def _crawl_nbs(
     start_year: int,
     end_year: int,
     max_workers: int,
-) -> tuple[int, list[Link]]:
+) -> tuple[int, list[Link], list[dict[str, str]]]:
     first = fetch_text(NBS_LIST_URL)
     page_match = re.search(r"createPageHTML\(\s*(\d+)\s*,\s*0\s*,\s*['\"]index", first)
     if not page_match:
         raise ValueError("Could not read pagination on the official NBS releases archive")
     page_count = int(page_match.group(1))
     urls = [urljoin(NBS_LIST_URL, f"index_{i}.html") for i in range(1, page_count)]
+    pages = [first]
+    listing_errors: list[dict[str, str]] = []
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        pages = [first, *pool.map(fetch_text, urls)]
+        futures = {pool.submit(fetch_text, url): url for url in urls}
+        for future in as_completed(futures):
+            url = futures[future]
+            try:
+                pages.append(future.result())
+            except Exception as exc:  # noqa: BLE001 - report incomplete archive pages
+                listing_errors.append({"url": url, "error": str(exc)})
     candidates: dict[str, Link] = {}
     for page in pages:
         parsed = _parse_page(page)
         for link in _unique_links(parsed.links, NBS_LIST_URL, "/sj/zxfb/"):
             if _nbs_year_in_range(link.title, start_year, end_year) and _nbs_series(link.title):
                 candidates[link.url] = link
-    return page_count, list(candidates.values())
+    return page_count, list(candidates.values()), listing_errors
 
 
 def _collect_articles(
@@ -565,8 +600,9 @@ def collect_nbs_snapshots(
         raise ValueError("start_year must be <= end_year")
     if max_workers < 1:
         raise ValueError("max_workers must be >= 1")
-    page_count, links = _crawl_nbs(fetch_text, start_year, end_year, max_workers)
+    page_count, links, listing_errors = _crawl_nbs(fetch_text, start_year, end_year, max_workers)
     articles, fetch_errors = _collect_articles(links, fetch_text, max_workers)
+    fetch_errors = [*listing_errors, *fetch_errors]
     rows: dict[str, list[dict[str, object]]] = {name: [] for name in NBS_SERIES}
     unparsed: list[dict[str, str]] = []
     for link, article in articles:
@@ -581,6 +617,10 @@ def collect_nbs_snapshots(
         if series is None or period is None:
             continue
         _, _, observation_date, observation_period = period
+        if series == "retail_sales" and "/" in observation_period:
+            # NBS 1—N months and the Jan-Feb joint release are cumulative periods.
+            # Keep them distinct from explicit single-month YoY observations.
+            series = "retail_sales_ytd"
         value = (
             _nbs_annual_retail_december_value(body)
             if annual_december and series == "retail_sales"
@@ -588,17 +628,32 @@ def collect_nbs_snapshots(
         )
         if value is None:
             unparsed.append({"series": series, "title": title, "url": link.url})
-            continue
-        rows[series].append(
-            _snapshot_row(
-                observation_date,
-                observation_period,
-                article.publication_date,
-                link.url,
-                value,
-                link.url,
+        else:
+            rows[series].append(
+                _snapshot_row(
+                    observation_date,
+                    observation_period,
+                    article.publication_date,
+                    link.url,
+                    value,
+                    link.url,
+                    source_title=title,
+                )
             )
-        )
+        if series == "cpi":
+            core_value = _nbs_core_cpi_value(body)
+            if core_value is not None:
+                rows["core_cpi"].append(
+                    _snapshot_row(
+                        observation_date,
+                        observation_period,
+                        article.publication_date,
+                        link.url,
+                        core_value,
+                        link.url,
+                        source_title=title,
+                    )
+                )
 
     output = Path(output_dir)
     downloaded_at = datetime.now(ZoneInfo("Asia/Shanghai")).isoformat(timespec="seconds")
@@ -609,7 +664,12 @@ def collect_nbs_snapshots(
             "The indexed release archive currently begins around 2021-09; earlier releases may exist "
             "at direct URLs and have not been systematically discovered."
         )
-        if name in {"industrial_production", "retail_sales", "fixed_asset_investment"}:
+        if name in {
+            "industrial_production",
+            "retail_sales",
+            "retail_sales_ytd",
+            "fixed_asset_investment",
+        }:
             notes += " The combined January-February release is assigned to February."
         if name == "fixed_asset_investment":
             notes += (
@@ -623,6 +683,8 @@ def collect_nbs_snapshots(
                 " December uses an explicit December YoY from the annual or monthly release; "
                 "the annual headline rate is not substituted."
             )
+        if name == "retail_sales_ytd":
+            notes += " This is cumulative year-to-date YoY, not monthly growth."
         _save_snapshot(
             output,
             spec,
@@ -721,7 +783,7 @@ def _crawl_pboc(
     start_year: int,
     end_year: int,
     max_workers: int,
-) -> tuple[int, list[Link]]:
+) -> tuple[int, list[Link], list[dict[str, str]]]:
     first = fetch_text(PBOC_LIST_URL)
     parsed = _parse_page(first)
     page_count = parsed.page_count
@@ -732,8 +794,16 @@ def _crawl_pboc(
         raise ValueError("Could not read pagination on the official PBOC releases archive")
     base = PBOC_LIST_URL.rsplit("/", 1)[0] + "/"
     urls = [urljoin(base, f"11871-{i}.html") for i in range(2, page_count + 1)]
+    pages = [first]
+    listing_errors: list[dict[str, str]] = []
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        pages = [first, *pool.map(fetch_text, urls)]
+        futures = {pool.submit(fetch_text, url): url for url in urls}
+        for future in as_completed(futures):
+            url = futures[future]
+            try:
+                pages.append(future.result())
+            except Exception as exc:  # noqa: BLE001 - report incomplete archive pages
+                listing_errors.append({"url": url, "error": str(exc)})
     candidates: dict[str, Link] = {}
     for page in pages:
         for link in _unique_links(
@@ -747,7 +817,7 @@ def _crawl_pboc(
             period = _pboc_period(title)
             if period and start_year <= period[0] <= end_year:
                 candidates[link.url] = link
-    return page_count, list(candidates.values())
+    return page_count, list(candidates.values()), listing_errors
 
 
 def collect_pboc_snapshots(
@@ -766,8 +836,9 @@ def collect_pboc_snapshots(
         raise ValueError("start_year must be <= end_year")
     if max_workers < 1:
         raise ValueError("max_workers must be >= 1")
-    page_count, links = _crawl_pboc(fetch_text, start_year, end_year, max_workers)
+    page_count, links, listing_errors = _crawl_pboc(fetch_text, start_year, end_year, max_workers)
     articles, fetch_errors = _collect_articles(links, fetch_text, max_workers)
+    fetch_errors = [*listing_errors, *fetch_errors]
     rows: dict[str, list[dict[str, object]]] = {name: [] for name in PBOC_SERIES}
     unparsed: list[dict[str, str]] = []
     pdf_attachments: list[dict[str, str]] = []
@@ -819,6 +890,7 @@ def collect_pboc_snapshots(
                     release_url,
                     value,
                     source_urls.get(name, release_url),
+                    source_title=title,
                 )
             )
 

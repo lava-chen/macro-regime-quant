@@ -158,11 +158,19 @@ series:
 
   cn_retail_sales:
     provider: csv
-    symbol: china/retail_sales_yoy.csv
+    symbol: china/retail_sales_monthly_yoy.csv
     kind: macro
     frequency: monthly
     release_lag_days: 18
-    notes: "NBS reported YoY growth."
+    notes: "NBS single-month YoY only; cumulative releases are stored separately."
+
+  cn_retail_sales_ytd:
+    provider: csv
+    symbol: china/retail_sales_ytd_yoy.csv
+    kind: macro
+    frequency: monthly
+    release_lag_days: 18
+    notes: "NBS cumulative year-to-date YoY; not single-month growth. Jan-Feb joint-period labels are retained."
 
   cn_fixed_asset_investment:
     provider: csv

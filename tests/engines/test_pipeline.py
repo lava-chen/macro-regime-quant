@@ -58,3 +58,25 @@ def test_partial_sources_preserve_configured_minimum_components():
     assert partial["inflation"].isna().all()
     with pytest.raises(KeyError, match="growth_b"):
         build_country_factors(raw, cfg, min_z_history=2)
+
+
+def test_optional_real_rate_skips_when_inflation_input_is_not_loaded():
+    idx = pd.date_range("2024-01-31", periods=4, freq="ME")
+    raw = pd.DataFrame({"cn_10y": [2.0, 2.1, 2.2, 2.3]}, index=idx)
+    cfg = {
+        "real_rate": {
+            "components": {
+                "proxy": {
+                    "source": "cn_10y",
+                    "transform": "real_rate_proxy",
+                    "inflation_source": "cn_cpi",
+                    "optional": True,
+                }
+            },
+            "min_components": 1,
+        }
+    }
+
+    result = build_country_factors(raw, cfg, min_z_history=2)
+
+    assert result["real_rate"].isna().all()

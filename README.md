@@ -173,3 +173,13 @@ the following calendar day, not for same-close execution. See
 [data/raw/vix/README.md](data/raw/vix/README.md) for provenance, licensing
 caveats, historical-data quirks, and point-in-time assumptions.
 
+## China macro watch
+
+The NBS/PBOC collector appends versioned observations and writes an audited
+point-in-time report. Run `uv run --locked macro-regime-quant refresh-china-macro`
+to update it, or `uv run --locked macro-regime-quant report-china-macro
+--as-of YYYY-MM-DD` to replay the existing ledger without network access. The
+daily workflow runs at 22:00 Beijing time and can also be triggered manually.
+See [docs/china_macro_data_watch.md](docs/china_macro_data_watch.md) and
+[docs/data_platform.md](docs/data_platform.md) for data coverage and storage routing.
+

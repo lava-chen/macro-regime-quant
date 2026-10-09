@@ -18,6 +18,7 @@ data/raw/china/*
 !data/raw/china/*.csv
 !data/raw/china/*.meta.yaml
 !data/raw/china/china_harvest_audit.yaml
+!data/raw/china/china_macro_watch_state.json
 !data/raw/vix/
 data/raw/vix/*
 !data/raw/vix/*.csv
@@ -28,3 +29,9 @@ data/cache/*
 !data/cache/.gitkeep
 reports/*
 !reports/.gitkeep
+!reports/china_macro/
+reports/china_macro/*
+!reports/china_macro/latest.json
+!reports/china_macro/latest.md
+!reports/china_macro/collection_audit.json
+!reports/china_macro/collection_audit.md

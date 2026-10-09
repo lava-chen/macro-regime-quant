@@ -12,12 +12,13 @@ dependencies = [
   "numpy>=2.0",
   "pandas>=2.2",
   "pyyaml>=6.0",
+  "requests>=2.32",
+  "pypdf>=5.0",
 ]
 
 [project.optional-dependencies]
 data = [
   "yfinance>=0.2.50",
-  "requests>=2.32",
 ]
 china = [
   "akshare>=1.17",

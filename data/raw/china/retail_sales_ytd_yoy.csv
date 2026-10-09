@@ -1,0 +1,13 @@
+observation_date,observation_period,available_date,availability_basis,availability_evidence_url,source_value_url,value
+2022-02-28,2022-01/2022-02,2022-03-15,official_release,https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901406.html,https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901406.html,6.7
+2022-04-30,2022-01/2022-04,2022-05-16,official_release,https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901464.html,https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901464.html,-0.2
+2022-05-31,2022-01/2022-05,2022-06-15,official_release,https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901490.html,https://www.stats.gov.cn/sj/zxfb/202302/t20230203_1901490.html,-1.5
+2023-02-28,2023-01/2023-02,2023-03-15,official_release,https://www.stats.gov.cn/sj/zxfb/202303/t20230315_1937198.html,https://www.stats.gov.cn/sj/zxfb/202303/t20230315_1937198.html,3.5
+2024-02-29,2024-01/2024-02,2024-03-18,official_release,https://www.stats.gov.cn/sj/zxfb/202403/t20240327_1948175.html,https://www.stats.gov.cn/sj/zxfb/202403/t20240327_1948175.html,5.5
+2024-06-30,2024-01/2024-06,2024-07-15,official_release,https://www.stats.gov.cn/sj/zxfb/202407/t20240715_1955609.html,https://www.stats.gov.cn/sj/zxfb/202407/t20240715_1955609.html,3.7
+2025-02-28,2025-01/2025-02,2025-03-17,official_release,https://www.stats.gov.cn/sj/zxfb/202503/t20250317_1959014.html,https://www.stats.gov.cn/sj/zxfb/202503/t20250317_1959014.html,4.0
+2026-02-28,2026-01/2026-02,2026-03-16,official_release,https://www.stats.gov.cn/sj/zxfb/202603/t20260316_1962786.html,https://www.stats.gov.cn/sj/zxfb/202603/t20260316_1962786.html,2.8
+2026-04-30,2026-01/2026-04,2026-05-18,official_release,https://www.stats.gov.cn/sj/zxfb/202605/t20260518_1963727.html,https://www.stats.gov.cn/sj/zxfb/202605/t20260518_1963727.html,1.9
+2026-05-31,2026-01/2026-05,2026-06-16,official_release,https://www.stats.gov.cn/sj/zxfb/202606/t20260616_1963949.html,https://www.stats.gov.cn/sj/zxfb/202606/t20260616_1963949.html,1.4
+2026-07-31,2026-01/2026-07,2026-08-17,official_release,https://www.stats.gov.cn/sj/zxfb/202608/t20260817_1965052.html,https://www.stats.gov.cn/sj/zxfb/202608/t20260817_1965052.html,1.2
+2026-08-31,2026-01/2026-08,2026-09-15,official_release,https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965311.html,https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965311.html,1.1
