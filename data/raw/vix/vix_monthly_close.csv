@@ -439,3 +439,4 @@ observation_date,value,available_date,availability_basis
 2026-06-30,16.450000,2026-07-01,fixed_lag
 2026-07-31,15.990000,2026-08-01,fixed_lag
 2026-08-31,14.920000,2026-09-01,fixed_lag
+2026-09-30,16.340000,2026-10-01,fixed_lag
