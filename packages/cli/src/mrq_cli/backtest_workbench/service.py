@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
@@ -39,7 +39,7 @@ def execute_backtest(
     benchmarks = _benchmark_results(portfolio_run, strategy)
     price_bytes = portfolio_run.prices.to_csv(index_label="date", float_format="%.12g").encode("utf-8")
     input_sha256 = hashlib.sha256(price_bytes).hexdigest()
-    generated_at = datetime.now(timezone.utc).isoformat()
+    generated_at = datetime.now(UTC).isoformat()
     report = build_backtest_report(
         run_id,
         strategy,

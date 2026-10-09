@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -88,7 +88,7 @@ def load_market_prices(
     specs_by_symbol = {spec.symbol.upper(): spec for spec in catalog.values()}
     series: list[pd.Series] = []
     sources: list[PriceSource] = []
-    retrieved_at = datetime.now(timezone.utc).isoformat()
+    retrieved_at = datetime.now(UTC).isoformat()
 
     for symbol in normalized:
         local_path = _local_market_file(root, symbol)

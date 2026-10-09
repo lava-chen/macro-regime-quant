@@ -7,7 +7,7 @@ import tempfile
 import unicodedata
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .models import StrategySpec
@@ -54,7 +54,7 @@ class StrategyStore:
         self.root.mkdir(parents=True, exist_ok=True)
         normalized_id = _safe_id(strategy_id or _slug(spec.name))
         destination = self.root / f"{normalized_id}.json"
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         previous: dict[str, object] | None = None
         if destination.exists():
             if not replace:
