@@ -1,0 +1,148 @@
+openapi: 3.1.0
+info:
+  title: Macro Regime Quant Backtest
+  version: 1.0.0
+  description: Save long-only target-weight strategies and run reproducible portfolio backtests.
+servers:
+  - url: https://YOUR-BACKTEST-HOST.example
+security:
+  - BearerAuth: []
+paths:
+  /assets:
+    get:
+      operationId: listAssets
+      summary: List configured market assets
+      responses:
+        '200':
+          description: Configured Yahoo and local CSV market symbols
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assets:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol: { type: string }
+                        kind: { type: string }
+                        provider: { type: string }
+  /strategies:
+    get:
+      operationId: listStrategies
+      summary: List saved strategies
+      responses:
+        '200':
+          description: Saved strategy definitions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  strategies:
+                    type: array
+                    items: { type: object }
+    post:
+      operationId: saveStrategy
+      summary: Save a named strategy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Strategy'
+      responses:
+        '201':
+          description: Saved strategy record
+          content:
+            application/json:
+              schema: { type: object }
+        '409': { description: Strategy name already exists }
+  /strategies/{strategy_id}:
+    put:
+      operationId: updateStrategy
+      summary: Update an existing named strategy
+      parameters:
+        - name: strategy_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Strategy'
+      responses:
+        '200':
+          description: Updated strategy record with incremented version
+          content:
+            application/json:
+              schema: { type: object }
+        '404': { description: Strategy not found }
+  /backtests:
+    post:
+      operationId: runBacktest
+      summary: Run a backtest for an inline or saved strategy
+      description: Returns performance metrics, benchmarks, drawdown, monthly returns, and input provenance.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              oneOf:
+                - required: [strategy]
+                  properties:
+                    strategy: { $ref: '#/components/schemas/Strategy' }
+                - required: [strategy_id]
+                  properties:
+                    strategy_id: { type: string }
+      responses:
+        '200':
+          description: Detailed backtest report
+          content:
+            application/json:
+              schema: { type: object }
+        '422': { description: Invalid strategy or data request }
+  /backtests/{run_id}:
+    get:
+      operationId: getBacktest
+      summary: Retrieve a saved backtest report
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Saved backtest report
+          content:
+            application/json:
+              schema: { type: object }
+        '404': { description: Backtest report not found }
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API token
+  schemas:
+    Strategy:
+      type: object
+      required: [name, weights]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        weights:
+          type: object
+          description: Long-only weights keyed by configured market symbol; values must sum to 1. CASH is supported.
+          additionalProperties: { type: number, minimum: 0 }
+        rebalance_frequency:
+          type: string
+          enum: [buy_and_hold, monthly, quarterly, annual]
+          default: monthly
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        initial_capital: { type: number, exclusiveMinimum: 0, default: 10000 }
+        transaction_cost_bps: { type: number, minimum: 0, default: 5 }

@@ -1,0 +1,168 @@
+from __future__ import annotations
+
+import hmac
+import json
+import os
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Any
+from urllib.parse import unquote, urlsplit
+
+from .models import StrategySpec
+from .prices import available_market_symbols
+from .service import execute_backtest, read_backtest_report
+from .store import StrategyStore
+
+MAX_BODY_BYTES = 1_048_576
+
+
+class BacktestRequestHandler(BaseHTTPRequestHandler):
+    server_version = "MacroRegimeQuantAPI/1.0"
+
+    def do_GET(self) -> None:
+        path = unquote(urlsplit(self.path).path)
+        if path == "/health":
+            self._send_json(200, {"status": "ok", "service": "macro-regime-quant-backtest"})
+            return
+        if not self._authorized():
+            return
+        try:
+            if path == "/assets":
+                self._send_json(200, {"assets": available_market_symbols()})
+            elif path == "/strategies":
+                self._send_json(200, {"strategies": [row.to_dict() for row in StrategyStore().list()]})
+            elif path.startswith("/backtests/"):
+                run_id = path.removeprefix("/backtests/")
+                self._send_json(200, read_backtest_report(run_id))
+            else:
+                self._send_error_json(404, "Unknown endpoint")
+        except KeyError as exc:
+            self._send_error_json(404, str(exc))
+        except ValueError as exc:
+            self._send_error_json(422, str(exc))
+        except FileNotFoundError as exc:
+            self._send_error_json(404 if path.startswith("/backtests/") else 500, str(exc))
+
+    def do_POST(self) -> None:
+        if not self._authorized():
+            return
+        try:
+            payload = self._read_json()
+            if self.path.split("?", 1)[0] == "/strategies":
+                spec = StrategySpec.from_dict(payload)
+                record = StrategyStore().save(spec)
+                self._send_json(201, record.to_dict())
+            elif self.path.split("?", 1)[0] == "/backtests":
+                self._run_backtest(payload)
+            else:
+                self._send_error_json(404, "Unknown endpoint")
+        except FileExistsError as exc:
+            self._send_error_json(409, str(exc))
+        except KeyError as exc:
+            self._send_error_json(404, str(exc))
+        except (TypeError, ValueError) as exc:
+            self._send_error_json(422, str(exc))
+        except RuntimeError as exc:
+            self._send_error_json(502, str(exc))
+
+    def do_PUT(self) -> None:
+        if not self._authorized():
+            return
+        path = unquote(urlsplit(self.path).path)
+        if not path.startswith("/strategies/"):
+            self._send_error_json(404, "Unknown endpoint")
+            return
+        strategy_id = path.removeprefix("/strategies/")
+        store = StrategyStore()
+        try:
+            store.get(strategy_id)
+            spec = StrategySpec.from_dict(self._read_json())
+            self._send_json(200, store.save(spec, strategy_id=strategy_id, replace=True).to_dict())
+        except KeyError as exc:
+            self._send_error_json(404, str(exc))
+        except (TypeError, ValueError) as exc:
+            self._send_error_json(422, str(exc))
+
+    def _run_backtest(self, payload: dict[str, Any]) -> None:
+        strategy_id = payload.get("strategy_id")
+        inline_strategy = payload.get("strategy")
+        if bool(strategy_id) == bool(inline_strategy):
+            raise ValueError("Provide exactly one of strategy_id or strategy")
+        if strategy_id:
+            strategy = StrategyStore().get(str(strategy_id)).spec
+        elif isinstance(inline_strategy, dict):
+            strategy = StrategySpec.from_dict(inline_strategy)
+        else:
+            raise ValueError("strategy must be a JSON object")
+        report = execute_backtest(
+            strategy,
+            project_root=os.environ.get("MRQ_PROJECT_ROOT"),
+            state_root=os.environ.get("MRQ_STATE_DIR"),
+        )
+        self._send_json(200, report)
+
+    def _authorized(self) -> bool:
+        expected = os.environ.get("MRQ_API_TOKEN", "")
+        if not expected:
+            self._send_error_json(503, "API is not configured: MRQ_API_TOKEN is missing")
+            return False
+        scheme, separator, supplied = self.headers.get("Authorization", "").partition(" ")
+        if (
+            not separator
+            or scheme.lower() != "bearer"
+            or not hmac.compare_digest(supplied.encode("utf-8"), expected.encode("utf-8"))
+        ):
+            self._send_error_json(401, "Invalid bearer token")
+            return False
+        return True
+
+    def _read_json(self) -> dict[str, Any]:
+        raw_length = self.headers.get("Content-Length", "0")
+        try:
+            length = int(raw_length)
+        except ValueError as exc:
+            raise ValueError("Content-Length must be an integer") from exc
+        if length < 1:
+            raise ValueError("Request body is required")
+        if length > MAX_BODY_BYTES:
+            raise ValueError("Request body exceeds 1 MiB")
+        try:
+            payload = json.loads(self.rfile.read(length))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("Request body must be valid UTF-8 JSON") from exc
+        if not isinstance(payload, dict):
+            raise TypeError("Request body must be a JSON object")
+        return payload
+
+    def _send_json(self, status_code: int, value: object) -> None:
+        encoded = json.dumps(value, ensure_ascii=False, allow_nan=False).encode("utf-8")
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(encoded)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(encoded)
+
+    def _send_error_json(self, status_code: int, message: str) -> None:
+        self._send_json(status_code, {"error": message})
+
+    def log_message(self, format_string: str, *args: object) -> None:
+        # Avoid logging request bodies, strategy inputs, or bearer headers.
+        super().log_message(format_string, *args)
+
+
+def create_server(host: str = "127.0.0.1", port: int = 8000) -> ThreadingHTTPServer:
+    return ThreadingHTTPServer((host, port), BacktestRequestHandler)
+
+
+def serve_api(host: str = "127.0.0.1", port: int = 8000) -> None:
+    if not os.environ.get("MRQ_API_TOKEN"):
+        raise SystemExit("Set MRQ_API_TOKEN before starting the backtest API")
+    server = create_server(host, port)
+    print(f"Backtest API listening on http://{host}:{server.server_port}")
+    print("Health: /health · OpenAPI action schema: chatgpt/openapi.yaml")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("Stopping backtest API")
+    finally:
+        server.server_close()

@@ -183,3 +183,6 @@ daily workflow runs at 22:00 Beijing time and can also be triggered manually.
 See [docs/china_macro_data_watch.md](docs/china_macro_data_watch.md) and
 [docs/data_platform.md](docs/data_platform.md) for data coverage and storage routing.
 
+## ChatGPT strategy backtests
+
+The CLI package includes an authenticated HTTP API for saving named strategies and running reproducible long-only portfolio backtests. It supports fixed weights, buy-and-hold or scheduled rebalancing, and records exact input-price snapshots with detailed return, risk, benchmark, and drawdown reports. See [docs/chatgpt_backtest.md](docs/chatgpt_backtest.md) for the Custom GPT Action schema and setup. This requires an HTTPS endpoint and a configured ChatGPT Action; the repository alone does not connect an ordinary chat automatically.
