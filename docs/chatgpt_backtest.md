@@ -24,7 +24,7 @@ The API has no order placement, account access, or arbitrary code execution endp
 
 ## Strategy input and defaults
 
-Weights are long-only, must sum to 1, and may include `CASH`. Supported schedules are `buy_and_hold`, `monthly`, `quarterly`, and `annual`. Start and end dates are inclusive. Defaults are monthly rebalancing, USD 10,000 starting capital, and 5 bps transaction cost. ChatGPT should state assumptions in the response and ask for a missing choice when it materially changes the interpretation (for example, monthly deposits versus a one-time investment).
+Weights are long-only, must sum to 1, and may include `CASH`. Supported schedules are `buy_and_hold`, `monthly`, `quarterly`, and `annual`. Start and end dates are inclusive. Defaults are monthly rebalancing, USD 10,000 starting capital, and 5 bps transaction cost. For GLD/QQQ the strategy currency is USD; no FX conversion, taxes, fund premiums, or impact costs are modeled.
 
 Example:
 
@@ -41,9 +41,29 @@ Example:
 }
 ```
 
+An optional `cash_flow` plan adds a weekly deposit, cumulative time-weighted-return take-profit tiers, and peak-to-trough drawdown exposure caps. For example, `return_threshold: 0.20` is a one-time 20% TWR trigger; `sell_fraction: 0.10` sells 10% of risk holdings at the next available close. A `trigger_drawdown: 0.15` rule with `max_invested_weight: 0.50` caps risk assets at 50% of account equity after the next-close execution. Deposits are excluded from TWR and drawdown; the report includes XIRR, all contributions, paid fees, cash balance, trade/event logs, and a same-cash-flow DCA-only benchmark. A drawdown cap reduces exposure but cannot guarantee a maximum loss.
+
+```json
+{
+  "cash_flow": {
+    "weekly_contribution_amount": 50,
+    "contribution_day": "FRI",
+    "take_profit_tiers": [
+      {"return_threshold": 0.20, "sell_fraction": 0.10},
+      {"return_threshold": 0.35, "sell_fraction": 0.15},
+      {"return_threshold": 0.50, "sell_fraction": 0.20}
+    ],
+    "drawdown_rules": [
+      {"trigger_drawdown": 0.15, "max_invested_weight": 0.50},
+      {"trigger_drawdown": 0.25, "max_invested_weight": 0.25}
+    ]
+  }
+}
+```
+
 ## Data and interpretation
 
-The default market source is the repository's configured Yahoo adapter with `auto_adjust=True`; a normalized local file at `data/raw/market/<SYMBOL>.csv` takes priority. Local files use `date` or `observation_date` plus `adjusted_close`, `adj_close`, `close`, or `value`. The report includes source dates, retrieval time, price basis, input checksum, aligned date range, and missing-row count. Provider history is not a point-in-time vintage, so a run is reproducible from its stored snapshot but does not establish historical publication-time availability of adjusted prices.
+The default market source is the repository's configured Yahoo adapter with `auto_adjust=True`; a normalized local file at `data/raw/market/<SYMBOL>.csv` takes priority. Local files use `date` or `observation_date` plus `adjusted_close`, `adj_close`, `close`, or `value`. The report includes source dates, retrieval time, price basis, input checksum, aligned date range, and missing-row count. Yahoo data is used for the personal backtest, not mirrored into the public repository. Provider history is not a point-in-time vintage, so a run is reproducible from its stored snapshot but does not establish historical publication-time availability of adjusted prices.
 
 The three external repositories `guidebee/china-stock-data`, `henrywuu91/quant-data`, and `modi-hu/stock-data` are currently source references only. No raw files from them are mirrored by this API. Check licensing, schemas, corporate-action conventions, and date coverage before importing any of their files.
 

@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import uuid
+from dataclasses import replace
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -37,6 +38,28 @@ def execute_backtest(
     run_id = f"bt_{uuid.uuid4().hex[:12]}"
     portfolio_run = run_portfolio_backtest(prices, strategy)
     benchmarks = _benchmark_results(portfolio_run, strategy)
+    if strategy.cash_flow is not None:
+        dca_only = replace(
+            strategy,
+            name=f"{strategy.name} — weekly DCA without controls",
+            cash_flow=replace(strategy.cash_flow, take_profit_tiers=(), drawdown_rules=()),
+        )
+        dca_run = run_portfolio_backtest(prices, dca_only)
+        dca_details = dca_run.cash_flow_details or {}
+        benchmarks["weekly_dca_without_controls"] = {
+            "time_weighted_total_return": float(dca_run.unit_nav.iloc[-1] - 1.0)
+            if dca_run.unit_nav is not None
+            else None,
+            "money_weighted_return_xirr": dca_details.get("xirr"),
+            "cagr": dca_run.result.metrics["cagr"],
+            "vol": dca_run.result.metrics["vol"],
+            "sharpe": dca_run.result.metrics["sharpe"],
+            "max_drawdown": dca_run.result.metrics["max_drawdown"],
+            "ending_value": float(dca_run.account_equity.iloc[-1])
+            if dca_run.account_equity is not None
+            else None,
+            "total_contributions": dca_details.get("total_contributions"),
+        }
     price_bytes = portfolio_run.prices.to_csv(index_label="date", float_format="%.12g").encode("utf-8")
     input_sha256 = hashlib.sha256(price_bytes).hexdigest()
     generated_at = datetime.now(UTC).isoformat()

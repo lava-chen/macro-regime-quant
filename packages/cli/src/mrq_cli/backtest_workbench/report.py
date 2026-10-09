@@ -21,24 +21,43 @@ def build_backtest_report(
     code_version: str,
 ) -> dict[str, Any]:
     returns = portfolio_run.result.returns
-    equity = strategy.initial_capital * (1.0 + returns).cumprod()
-    gross_equity = strategy.initial_capital * (1.0 + portfolio_run.result.gross_returns).cumprod()
-    drawdown = equity / equity.cummax() - 1.0
+    cash_flow_details = portfolio_run.cash_flow_details
+    if portfolio_run.account_equity is not None and portfolio_run.unit_nav is not None:
+        equity = portfolio_run.account_equity
+        drawdown_basis = portfolio_run.unit_nav
+        total_return = float(portfolio_run.unit_nav.iloc[-1] - 1.0)
+    else:
+        equity = strategy.initial_capital * (1.0 + returns).cumprod()
+        drawdown_basis = equity
+        total_return = float(equity.iloc[-1] / strategy.initial_capital - 1.0)
+    gross_growth = float((1.0 + portfolio_run.result.gross_returns).prod())
+    drawdown = drawdown_basis / drawdown_basis.cummax() - 1.0
     monthly = returns.groupby(returns.index.to_period("M")).apply(lambda values: (1 + values).prod() - 1)
     annual = returns.groupby(returns.index.year).apply(lambda values: (1 + values).prod() - 1)
     result_metrics = dict(portfolio_run.result.metrics)
     final_value = float(equity.iloc[-1])
     result_metrics.update(
         {
-            "total_return": final_value / strategy.initial_capital - 1.0,
-            "gross_total_return": float(gross_equity.iloc[-1] / strategy.initial_capital - 1.0),
+            "total_return": total_return,
+            "gross_total_return": gross_growth - 1.0,
             "initial_capital": float(strategy.initial_capital),
             "ending_value": final_value,
             "total_turnover": float(portfolio_run.result.turnover.sum()),
             "observations": int(max(0, len(returns) - 1)),
         }
     )
-    return {
+    if cash_flow_details is not None:
+        result_metrics.update(
+            {
+                "money_weighted_return_xirr": cash_flow_details["xirr"],
+                "total_contributions": cash_flow_details["total_contributions"],
+                "cash_balance": cash_flow_details["ending_cash"],
+                "risk_assets_value": cash_flow_details["ending_risk_assets"],
+                "transaction_costs": cash_flow_details["transaction_costs"],
+                "trade_count": cash_flow_details["trade_count"],
+            }
+        )
+    report = {
         "schema_version": 1,
         "backtest_id": run_id,
         "generated_at": generated_at,
@@ -61,7 +80,8 @@ def build_backtest_report(
         "equity_curve_monthly": _sample_equity(equity, strategy.initial_capital),
         "drawdown": {
             "max_drawdown": _json_float(drawdown.min()),
-            "episode": _drawdown_episode(equity, drawdown),
+            "basis": "unitized NAV excluding external contributions" if cash_flow_details else "account equity",
+            "episode": _drawdown_episode(drawdown_basis, drawdown),
             "monthly_series": _sample_series(drawdown, "drawdown"),
         },
         "weights_month_end": _month_end_weights(portfolio_run.result.ending_weights),
@@ -79,7 +99,11 @@ def build_backtest_report(
             "transaction_cost": "Cost in basis points multiplied by gross traded notional (absolute weight change).",
             "portfolio": "Long-only; weights drift between target-weight instructions; residual weight is zero-return cash.",
             "sharpe": "Daily annualization with 252 periods/year and a 0% risk-free rate.",
-            "cash_flows": "No recurring deposits or withdrawals are modeled.",
+            "cash_flows": (
+                "No recurring deposits or withdrawals are modeled."
+                if cash_flow_details is None
+                else "Weekly deposits are added at the selected week-ending close and excluded from time-weighted return and drawdown."
+            ),
             "taxes": "Taxes, fund premiums, and market impact beyond the configured transaction cost are not modeled.",
         },
         "diagnostics": {
@@ -90,6 +114,9 @@ def build_backtest_report(
             },
         },
     }
+    if cash_flow_details is not None:
+        report["cash_flow"] = _json_safe(cash_flow_details)
+    return report
 
 
 def build_markdown_report(report: dict[str, Any]) -> str:
@@ -111,15 +138,44 @@ def build_markdown_report(report: dict[str, Any]) -> str:
         f"| Maximum drawdown | {_percent(metrics['max_drawdown'])} |",
         f"| Ending value | {metrics['ending_value']:,.2f} |",
         f"| Total turnover | {_number(metrics['total_turnover'])}× NAV |",
+    ]
+    if "total_contributions" in metrics:
+        lines.extend(
+            [
+                f"| Total contributions | {metrics['total_contributions']:,.2f} |",
+                f"| Money-weighted return (XIRR) | {_percent(metrics['money_weighted_return_xirr'])} |",
+                f"| Cash balance | {metrics['cash_balance']:,.2f} |",
+                f"| Transaction costs paid | {metrics['transaction_costs']:,.2f} |",
+            ]
+        )
+    lines.extend(
+        [
         "",
         "## Assumptions",
         "",
         f"- Target weights: {', '.join(f'{k} {v:.1%}' for k, v in strategy['weights'].items())}",
         f"- Rebalance: {strategy['rebalance_frequency']}; transaction cost: {strategy['transaction_cost_bps']} bps per traded notional.",
-        "- Close signal executes for the next available session; no recurring deposits, tax, or market impact.",
+        "- Close-derived risk signals execute at the next available close; no tax or market impact beyond the fee assumption.",
         "- Price snapshots and checksums are retained with this run; provider history is not a point-in-time vintage.",
         "",
-    ]
+        ]
+    )
+    cash_flow = report.get("cash_flow")
+    if cash_flow:
+        lines.extend(
+            [
+                "## Cash flows and risk controls",
+                "",
+                f"- Weekly deposit: {cash_flow['weekly_contribution_amount']:,.2f} on {cash_flow['contribution_day']} close; {cash_flow['contribution_count']} deposits.",
+                f"- Total contributed: {cash_flow['total_contributions']:,.2f}; ending cash: {cash_flow['ending_cash']:,.2f}.",
+                f"- Trades: {cash_flow['trade_count']}; fees paid: {cash_flow['transaction_costs']:,.2f}.",
+                f"- Take-profit and drawdown event records: {len(cash_flow['events'])}; unexecuted signals at end: {len(cash_flow['pending_events'])}.",
+                "- Deposits are excluded from time-weighted return and drawdown; XIRR includes each deposit and terminal account value.",
+                "- Profit-taking thresholds use cumulative time-weighted return; each tier triggers once and sells the stated fraction of then-current risk holdings.",
+                "- Drawdown rules cap risky exposure until unitized NAV reaches a new high. The caps reduce exposure; they do not guarantee a loss limit.",
+                "",
+            ]
+        )
     return "\n".join(lines)
 
 
