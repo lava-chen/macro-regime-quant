@@ -21,6 +21,8 @@ from mrq_engines.pipeline import (
 from mrq_research.idea import IdeaError, evaluate_idea, load_signal_function
 from mrq_research.us_regime import analyze_us_regimes
 
+from mrq_cli.backtest_workbench.http_api import serve_api
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="macro-regime-quant")
@@ -147,6 +149,13 @@ def build_parser() -> argparse.ArgumentParser:
     archive.add_argument("--catalog", default="config/data_catalog.yaml")
     archive.add_argument("--root", default="data/vintages")
 
+    api = sub.add_parser(
+        "serve-backtest-api",
+        help="Serve the authenticated strategy and backtest API for a Custom GPT Action",
+    )
+    api.add_argument("--host", default="127.0.0.1")
+    api.add_argument("--port", type=int, default=8000)
+
     return parser
 
 
@@ -241,6 +250,10 @@ def _run_test_idea(args) -> None:
 
 def main() -> None:
     args = build_parser().parse_args()
+
+    if args.command == "serve-backtest-api":
+        serve_api(host=args.host, port=args.port)
+        return
 
     if args.command == "build-us-baseline":
         _write_baseline(

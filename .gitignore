@@ -35,3 +35,5 @@ reports/china_macro/*
 !reports/china_macro/latest.md
 !reports/china_macro/collection_audit.json
 !reports/china_macro/collection_audit.md
+state/
+.local-state/
