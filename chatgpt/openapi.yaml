@@ -146,3 +146,35 @@ components:
         end_date: { type: string, format: date }
         initial_capital: { type: number, exclusiveMinimum: 0, default: 10000 }
         transaction_cost_bps: { type: number, minimum: 0, default: 5 }
+        cash_flow:
+          type: object
+          description: Optional scheduled deposits and portfolio-level profit-taking/drawdown rules.
+          required: [weekly_contribution_amount]
+          properties:
+            weekly_contribution_amount:
+              type: number
+              exclusiveMinimum: 0
+              description: Amount in the strategy currency contributed once per week.
+            contribution_day:
+              type: string
+              enum: [MON, TUE, WED, THU, FRI]
+              default: FRI
+              description: Use the last available market close in each week ending on this weekday.
+            take_profit_tiers:
+              type: array
+              description: One-time triggers on cumulative time-weighted return; sell fractions of then-current risk holdings at the next available close.
+              items:
+                type: object
+                required: [return_threshold, sell_fraction]
+                properties:
+                  return_threshold: { type: number, exclusiveMinimum: 0, description: Decimal return threshold; 0.20 means 20%. }
+                  sell_fraction: { type: number, exclusiveMinimum: 0, maximum: 1, description: Fraction of current risk holdings to sell. }
+            drawdown_rules:
+              type: array
+              description: Ordered peak-to-trough unitized-NAV triggers. Exposure is capped until unitized NAV makes a new high; this does not guarantee a maximum loss.
+              items:
+                type: object
+                required: [trigger_drawdown, max_invested_weight]
+                properties:
+                  trigger_drawdown: { type: number, exclusiveMinimum: 0, exclusiveMaximum: 1, description: Decimal drawdown threshold; 0.15 means 15%. }
+                  max_invested_weight: { type: number, minimum: 0, maximum: 1, description: Maximum account fraction in risky assets after the rule triggers. }

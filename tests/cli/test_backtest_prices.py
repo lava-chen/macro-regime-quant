@@ -10,6 +10,10 @@ def test_local_price_snapshot_precedes_network_and_is_inclusive(tmp_path):
         "date,adjusted_close\n2025-01-01,100\n2025-01-02,101\n2025-01-03,102\n",
         encoding="utf-8",
     )
+    (tmp_path / "data" / "raw" / "market" / "QQQ.csv.meta.json").write_text(
+        '{"origin_provider":"yahoo_finance","source_url":"https://finance.yahoo.com/quote/QQQ/history/","retrieved_at":"2025-01-04T00:00:00Z"}',
+        encoding="utf-8",
+    )
     prices, sources = load_market_prices(
         ["QQQ"], start="2025-01-02", end="2025-01-02", project_root=tmp_path
     )
@@ -17,6 +21,9 @@ def test_local_price_snapshot_precedes_network_and_is_inclusive(tmp_path):
     assert sources[0].provider == "local_csv"
     assert sources[0].first_date == "2025-01-02"
     assert sources[0].content_sha256
+    assert sources[0].origin_provider == "yahoo_finance"
+    assert sources[0].source_url == "https://finance.yahoo.com/quote/QQQ/history/"
+    assert sources[0].retrieved_at == "2025-01-04T00:00:00Z"
 
 
 def test_unknown_symbol_requires_catalog_entry_or_normalized_csv(tmp_path):

@@ -14,9 +14,17 @@ class PortfolioRun:
     prices: pd.DataFrame
     dropped_incomplete_rows: int
     signal_dates: tuple[str, ...]
+    cash_flow_details: dict[str, object] | None = None
+    account_equity: pd.Series | None = None
+    unit_nav: pd.Series | None = None
 
 
 def run_portfolio_backtest(prices: pd.DataFrame, strategy: StrategySpec) -> PortfolioRun:
+    if strategy.cash_flow is not None:
+        from .cashflow import run_cashflow_portfolio_backtest
+
+        return run_cashflow_portfolio_backtest(prices, strategy)
+
     symbols = [symbol for symbol in strategy.weights if symbol != "CASH"]
     missing = sorted(set(symbols) - set(prices.columns))
     if missing:

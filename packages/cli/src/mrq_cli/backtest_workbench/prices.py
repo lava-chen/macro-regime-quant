@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -28,6 +29,7 @@ class PriceSource:
     observations: int
     retrieved_at: str
     content_sha256: str
+    origin_provider: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -41,6 +43,7 @@ class PriceSource:
             "observations": self.observations,
             "retrieved_at": self.retrieved_at,
             "content_sha256": self.content_sha256,
+            "origin_provider": self.origin_provider,
         }
 
 
@@ -96,7 +99,10 @@ def load_market_prices(
             values, basis, payload = _read_market_csv(local_path, start=start, end=end)
             provider = "local_csv"
             source_path = str(local_path.relative_to(root))
-            source_url = None
+            metadata = _read_price_metadata(local_path)
+            source_url = metadata.get("source_url")
+            source_retrieved_at = metadata.get("retrieved_at")
+            origin_provider = metadata.get("origin_provider")
         else:
             spec = specs_by_symbol.get(symbol)
             if spec is None or spec.provider != "yahoo" or spec.kind not in {
@@ -140,6 +146,8 @@ def load_market_prices(
             source_path = None
             source_url = f"https://finance.yahoo.com/quote/{symbol}/history/"
             payload = values.to_csv().encode("utf-8")
+            source_retrieved_at = retrieved_at
+            origin_provider = "yahoo_finance"
 
         if values.empty:
             raise ValueError(f"No price observations found for {symbol} in the requested date range")
@@ -159,8 +167,9 @@ def load_market_prices(
                 first_date=values.index.min().date().isoformat(),
                 last_date=values.index.max().date().isoformat(),
                 observations=int(values.size),
-                retrieved_at=retrieved_at,
+                retrieved_at=str(source_retrieved_at or retrieved_at),
                 content_sha256=hashlib.sha256(payload).hexdigest(),
+                origin_provider=str(origin_provider) if origin_provider else None,
             )
         )
 
@@ -216,6 +225,19 @@ def _local_market_file(root: Path, symbol: str) -> Path | None:
     if slug != symbol:
         candidates.append(root / "data" / "raw" / "market" / f"{slug}.csv")
     return next((path for path in candidates if path.is_file()), None)
+
+
+def _read_price_metadata(path: Path) -> dict[str, object]:
+    metadata_path = path.with_suffix(path.suffix + ".meta.json")
+    if not metadata_path.is_file():
+        return {}
+    try:
+        metadata = json.loads(metadata_path.read_text("utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Invalid price snapshot metadata at {metadata_path}") from exc
+    if not isinstance(metadata, dict):
+        raise TypeError(f"Price snapshot metadata at {metadata_path} must be a JSON object")
+    return metadata
 
 
 def _project_root(value: str | Path | None) -> Path:

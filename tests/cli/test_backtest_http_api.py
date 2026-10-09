@@ -77,6 +77,12 @@ def test_http_end_to_end_strategy_save_run_and_report_retrieval(tmp_path, monkey
             "end_date": "2025-01-08",
             "initial_capital": 1000,
             "transaction_cost_bps": 0,
+            "cash_flow": {
+                "weekly_contribution_amount": 20,
+                "contribution_day": "FRI",
+                "take_profit_tiers": [{"return_threshold": 0.2, "sell_fraction": 0.1}],
+                "drawdown_rules": [{"trigger_drawdown": 0.15, "max_invested_weight": 0.5}],
+            },
         }
         created_status, saved = _request(
             base, "POST", "/strategies", body=strategy, token="smoke-secret"
@@ -94,6 +100,9 @@ def test_http_end_to_end_strategy_save_run_and_report_retrieval(tmp_path, monkey
         )
         assert status == 200
         assert report["metrics"]["ending_value"] > 1000
+        assert report["metrics"]["total_contributions"] == 1040
+        assert report["cash_flow"]["contribution_count"] == 2
+        assert report["benchmarks"]["weekly_dca_without_controls"]["total_contributions"] == 1040
         assert report["data"]["price_snapshot_sha256"]
         assert report["benchmarks"]["same_weights_buy_and_hold"]
 
