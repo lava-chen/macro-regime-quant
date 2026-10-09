@@ -1,0 +1,11 @@
+series_key: cn_retail_sales
+source_name: National Bureau of Statistics of China
+source_url: https://www.stats.gov.cn/sj/zxfb/
+frequency: monthly
+unit: percent_yoy
+downloaded_at: '2026-10-07T17:11:40+08:00'
+reported_as: monthly_yoy_percent
+revision_policy: frozen_value_as_reported_in_each_original_release_document
+notes: Partitioned without changing values or release evidence from retail_sales_yoy.csv;
+  42 records. Original mixed-period archive retained unchanged. Only explicit single-month
+  growth periods; cumulative releases are excluded.

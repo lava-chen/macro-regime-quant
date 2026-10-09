@@ -1,0 +1,42 @@
+# Public GitHub sources suggested for broader market research.
+# No raw files are mirrored until each source's redistribution rights are cleared.
+sources:
+  - id: guidebee_china_stock_data
+    repository: guidebee/china-stock-data
+    url: https://github.com/guidebee/china-stock-data
+    dataset: broad China A/B-share daily OHLCV and company master
+    observed_repository_update: "2026-06-05"
+    observed_snapshot_size_bytes: 27614646
+    redistribution_license: not_found
+    enabled_for_ingest: false
+    storage_target: cloudflare_r2
+    cautions:
+      - Verify actual date coverage and corporate-action adjustment before using as a return series.
+      - Do not infer trading volume direction or institutional order flow from OHLCV.
+
+  - id: henrywuu_quant_data
+    repository: henrywuu91/quant-data
+    url: https://github.com/henrywuu91/quant-data
+    dataset: 50 CN, 50 HK, and 50 US sample equities; daily bars and quarterly statements
+    observed_repository_update: "2026-06-24"
+    observed_snapshot_size_bytes: 116496337
+    redistribution_license: not_found
+    enabled_for_ingest: false
+    storage_target: cloudflare_r2
+    cautions:
+      - Universe is selected from recent turnover and is not point-in-time survivorship safe.
+      - Recompute extensions from raw values and validate filing_date before PIT backtests.
+
+  - id: modi_hu_stock_data
+    repository: modi-hu/stock-data
+    url: https://github.com/modi-hu/stock-data
+    dataset: EastMoney-derived China equity and sector daily CSV files
+    observed_repository_update: "2026-09-21"
+    observed_snapshot_size_bytes: 701456064
+    redistribution_license: not_found
+    enabled_for_ingest: false
+    storage_target: cloudflare_r2
+    cautions:
+      - README states prices are in fen; convert to yuan only in a derived view.
+      - Order-flow fields are vendor-derived and are not treated as verified institutional flow.
+      - Large monthly CSV files belong in object storage, not Git history.

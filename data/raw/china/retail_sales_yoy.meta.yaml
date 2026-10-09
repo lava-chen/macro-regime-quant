@@ -1,14 +1,12 @@
-series_key: cn_retail_sales
+series_key: legacy_mixed_retail_sales_periods
 source_name: National Bureau of Statistics of China
 source_url: https://www.stats.gov.cn/sj/zxfb/
 frequency: monthly
 unit: percent_yoy
 downloaded_at: '2026-10-07T17:11:40+08:00'
-reported_as: monthly_yoy_percent
+reported_as: legacy_mixed_monthly_and_cumulative_periods
 revision_policy: frozen_value_as_reported_in_each_original_release_document
-notes: 'Values are stored as reported in the linked NBS release and are not transformed
-  again. The indexed release archive currently begins around 2021-09; earlier releases
-  may exist at direct URLs and have not been systematically discovered. Observation
-  coverage: 2021-10-31 through 2026-08-31. The combined January-February release is
-  assigned to February. December uses an explicit December YoY; the annual headline
-  rate is not substituted.'
+notes: Frozen original snapshot retained unchanged. Periods with YYYY-01/YYYY-MM are
+  cumulative year-to-date releases; periods with YYYY-MM are explicit single-month
+  releases. See retail_sales_monthly_yoy.csv and retail_sales_ytd_yoy.csv for separated
+  catalog series.

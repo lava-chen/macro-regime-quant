@@ -1,0 +1,72 @@
+name: Refresh China macro watch
+
+on:
+  schedule:
+    # 22:00 Asia/Shanghai. GitHub may queue scheduled jobs late; the collector retries
+    # official requests and manual workflow_dispatch is available after a missed run.
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      full_rescan:
+        description: Rescan the indexed NBS/PBOC archive from 2005
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-china-macro-main
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+
+      - run: uv sync --locked --all-packages --group dev
+
+      - name: Collect official releases and build the PIT report
+        id: refresh
+        continue-on-error: true
+        env:
+          FULL_RESCAN: ${{ inputs.full_rescan }}
+        run: |
+          args=()
+          if [ "$FULL_RESCAN" = "true" ]; then
+            args+=(--full-rescan)
+          fi
+          uv run --locked macro-regime-quant refresh-china-macro --workers 2 "${args[@]}"
+
+      - name: Commit append-only ledger and audit outputs
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u data/raw/china reports/china_macro
+          for path in data/raw/china/china_macro_snapshots.csv data/raw/china/china_macro_watch_state.json reports/china_macro; do
+            if [ -e "$path" ]; then git add "$path"; fi
+          done
+          if ! git diff --cached --quiet; then
+            git commit -m "data: refresh China macro watch"
+            git push origin HEAD:main
+          fi
+
+      - name: Fail the run when an official source is incomplete
+        if: steps.refresh.outcome != 'success'
+        run: exit 1

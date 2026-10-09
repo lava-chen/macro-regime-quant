@@ -26,8 +26,12 @@ snapshots:
     reported_as: yoy_percent
   cn_retail_sales:
     owner: nbs
-    file: china/retail_sales_yoy.csv
-    reported_as: yoy_percent
+    file: china/retail_sales_monthly_yoy.csv
+    reported_as: monthly_yoy_percent
+  cn_retail_sales_ytd:
+    owner: nbs
+    file: china/retail_sales_ytd_yoy.csv
+    reported_as: ytd_yoy_percent
   cn_fixed_asset_investment:
     owner: nbs
     file: china/fixed_asset_investment_ytd_yoy.csv

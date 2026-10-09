@@ -94,6 +94,42 @@ def test_nbs_collector_writes_original_value_and_release_evidence(tmp_path: Path
     assert validated.rows == 1
 
 
+def test_nbs_collector_only_records_explicit_core_cpi(tmp_path: Path):
+    listing = """<script>createPageHTML(1, 0, 'index', 'html');</script>
+    <a href="202503/cpi.html">2025年2月份居民消费价格变动情况</a>"""
+    article_url = "https://www.stats.gov.cn/sj/zxfb/202503/cpi.html"
+    article = """<meta name="ArticleTitle" content="2025年2月份居民消费价格变动情况">
+    <meta name="PubDate" content="2025-03-09">
+    <div id="zoom"><p>居民消费价格同比下降0.7%。扣除食品和能源价格后的核心CPI同比上涨0.3%。</p></div>"""
+
+    def fetch(url: str) -> str:
+        if url == NBS_LIST_URL:
+            return listing
+        if url == article_url:
+            return article
+        raise AssertionError(f"Unexpected URL: {url}")
+
+    collect_nbs_snapshots(
+        tmp_path,
+        start_year=2025,
+        end_year=2025,
+        fetch_text=fetch,
+        max_workers=1,
+    )
+
+    cpi = pd.read_csv(tmp_path / "cpi_yoy.csv")
+    core = pd.read_csv(tmp_path / "core_cpi_yoy.csv")
+    assert cpi.loc[0, "value"] == -0.7
+    assert core.loc[0, "value"] == 0.3
+    assert core.loc[0, "available_date"] == "2025-03-09"
+    assert core.loc[0, "availability_evidence_url"] == article_url
+    assert core.loc[0, "source_title"] == "2025年2月份居民消费价格变动情况"
+
+
+def test_core_cpi_is_not_derived_when_release_does_not_report_it():
+    assert china_harvest._nbs_core_cpi_value("居民消费价格同比上涨0.2%。") is None
+
+
 def test_nbs_collector_captures_annual_december_retail_and_investment_rows(tmp_path: Path):
     listing = """<script>createPageHTML(1, 0, 'index', 'html');</script>
     <a href="202601/retail.html">2025年12月份社会消费品零售总额增长0.9%</a>
@@ -123,7 +159,7 @@ def test_nbs_collector_captures_annual_december_retail_and_investment_rows(tmp_p
         fetch_text=fetch,
         max_workers=1,
     )
-    retail_frame = pd.read_csv(tmp_path / "retail_sales_yoy.csv")
+    retail_frame = pd.read_csv(tmp_path / "retail_sales_monthly_yoy.csv")
     investment_frame = pd.read_csv(tmp_path / "fixed_asset_investment_ytd_yoy.csv")
 
     assert retail_frame.loc[0, "observation_period"] == "2025-12"
@@ -132,6 +168,73 @@ def test_nbs_collector_captures_annual_december_retail_and_investment_rows(tmp_p
     assert investment_frame.loc[0, "observation_period"] == "2025-12"
     assert investment_frame.loc[0, "available_date"] == "2026-01-19"
     assert investment_frame.loc[0, "value"] == -3.8
+
+
+def test_nbs_retail_single_month_and_ytd_are_separate_series(tmp_path: Path):
+    listing = """<script>createPageHTML(1, 0, 'index', 'html');</script>
+    <a href="202609/monthly.html">2026年6月份社会消费品零售总额增长1.3%</a>
+    <a href="202609/ytd.html">2026年1—8月份社会消费品零售总额增长1.1%</a>"""
+    monthly_url = "https://www.stats.gov.cn/sj/zxfb/202609/monthly.html"
+    ytd_url = "https://www.stats.gov.cn/sj/zxfb/202609/ytd.html"
+    monthly = """<meta name="ArticleTitle" content="2026年6月份社会消费品零售总额增长1.3%">
+    <meta name="PubDate" content="2026-07-15">
+    <div id="zoom"><p>6月份，社会消费品零售总额同比增长1.3%。</p></div>"""
+    ytd = """<meta name="ArticleTitle" content="2026年1—8月份社会消费品零售总额增长1.1%">
+    <meta name="PubDate" content="2026-09-15">
+    <div id="zoom"><p>1—8月份，社会消费品零售总额同比增长1.1%。</p></div>"""
+
+    def fetch(url: str) -> str:
+        return {
+            NBS_LIST_URL: listing,
+            monthly_url: monthly,
+            ytd_url: ytd,
+        }[url]
+
+    collect_nbs_snapshots(
+        tmp_path,
+        start_year=2026,
+        end_year=2026,
+        fetch_text=fetch,
+        max_workers=1,
+    )
+    monthly_frame = pd.read_csv(tmp_path / "retail_sales_monthly_yoy.csv")
+    ytd_frame = pd.read_csv(tmp_path / "retail_sales_ytd_yoy.csv")
+
+    assert monthly_frame.loc[0, "observation_period"] == "2026-06"
+    assert monthly_frame.loc[0, "value"] == 1.3
+    assert ytd_frame.loc[0, "observation_period"] == "2026-01/2026-08"
+    assert ytd_frame.loc[0, "value"] == 1.1
+    assert not ytd_frame["observation_period"].eq("2026-08").any()
+
+
+def test_nbs_keeps_successful_rows_and_reports_failed_archive_page(tmp_path: Path):
+    article_url = "https://www.stats.gov.cn/sj/zxfb/202609/industrial.html"
+    listing = """<script>createPageHTML(2, 0, 'index', 'html');</script>
+    <a href="202609/industrial.html">2026年8月份规模以上工业增加值增长5.2%</a>"""
+    article = """<meta name="ArticleTitle" content="2026年8月份规模以上工业增加值增长5.2%">
+    <meta name="PubDate" content="2026-09-15">
+    <div id="zoom"><p>规模以上工业增加值同比增长5.2%。</p></div>"""
+
+    def fetch(url: str) -> str:
+        if url == NBS_LIST_URL:
+            return listing
+        if url == article_url:
+            return article
+        if url.endswith("index_1.html"):
+            raise RuntimeError("simulated archive page outage")
+        raise AssertionError(f"Unexpected URL: {url}")
+
+    result = collect_nbs_snapshots(
+        tmp_path,
+        start_year=2026,
+        end_year=2026,
+        fetch_text=fetch,
+        max_workers=1,
+    )
+
+    industrial = pd.read_csv(tmp_path / "industrial_production_yoy.csv")
+    assert len(industrial) == 1
+    assert any(error["url"].endswith("index_1.html") for error in result["fetch_errors"])
 
 
 def test_pboc_collector_keeps_monetary_series_yoy_and_true_release_date(tmp_path: Path):

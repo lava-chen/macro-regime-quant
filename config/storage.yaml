@@ -1,0 +1,41 @@
+# Storage routing for the local research workspace and future private services.
+# Credentials are read from environment variables; none belong in this repository.
+storage:
+  compute:
+    engine: duckdb
+    local_cache: data/cache/mrq.duckdb
+    policy: ephemeral_rebuildable
+
+  point_in_time_macro:
+    backend: git_csv_ledger
+    path: data/raw/china/china_macro_snapshots.csv
+    reports: reports/china_macro
+    policy: append_only_versioned_rows
+
+  large_market_data:
+    backend: cloudflare_r2
+    enabled: false
+    endpoint_env: MRQ_R2_ENDPOINT
+    bucket_env: MRQ_R2_BUCKET
+    access_key_id_env: MRQ_R2_ACCESS_KEY_ID
+    secret_access_key_env: MRQ_R2_SECRET_ACCESS_KEY
+    object_pattern: "market-data/{market}/{dataset}/{symbol}.parquet"
+    format: parquet
+    policy: raw_and_vintage_partitions
+
+  metadata_and_workspaces:
+    backend: supabase_postgres
+    enabled: false
+    database_url_env: SUPABASE_DB_URL
+    reserved_tables:
+      - data_catalog
+      - data_refresh_runs
+      - strategies
+      - backtest_runs
+    policy: metadata_and_indexes_only
+
+  report_consumers:
+    json_contract: reports/china_macro/latest.json
+    markdown_report: reports/china_macro/latest.md
+    dashboard: vercel_terminal
+    dashboard_secret_access: none

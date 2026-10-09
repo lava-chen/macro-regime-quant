@@ -632,7 +632,9 @@ dependencies = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://mirrors.cloud.tencent.com/pypi/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://mirrors.cloud.tencent.com/pypi/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pandas" },
+    { name = "pypdf" },
     { name = "pyyaml" },
+    { name = "requests" },
 ]
 
 [package.optional-dependencies]
@@ -640,7 +642,6 @@ china = [
     { name = "akshare" },
 ]
 data = [
-    { name = "requests" },
     { name = "yfinance" },
 ]
 
@@ -650,8 +651,9 @@ requires-dist = [
     { name = "mrq-core", editable = "packages/core" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "pandas", specifier = ">=2.2" },
+    { name = "pypdf", specifier = ">=5.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "requests", marker = "extra == 'data'", specifier = ">=2.32" },
+    { name = "requests", specifier = ">=2.32" },
     { name = "yfinance", marker = "extra == 'data'", specifier = ">=0.2.50" },
 ]
 provides-extras = ["data", "china"]
@@ -1125,6 +1127,15 @@ wheels = [
     { url = "https://mirrors.cloud.tencent.com/pypi/packages/da/92/1446574745d74df0c92e6aa4a7b0b3130706a4142b2d1a5869f2eaa423c6/pyyaml-6.0.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:16249ee61e95f858e83976573de0f5b2893b3677ba71c9dd36b9cf8be9ac6d65" },
     { url = "https://mirrors.cloud.tencent.com/pypi/packages/f0/7a/1c7270340330e575b92f397352af856a8c06f230aa3e76f86b39d01b416a/pyyaml-6.0.3-cp314-cp314t-win_amd64.whl", hash = "sha256:4ad1906908f2f5ae4e5a8ddfce73c320c2a1429ec52eafd27138b7f1cbe341c9" },
     { url = "https://mirrors.cloud.tencent.com/pypi/packages/f1/12/de94a39c2ef588c7e6455cfbe7343d3b2dc9d6b6b2f40c4c6565744c873d/pyyaml-6.0.3-cp314-cp314t-win_arm64.whl", hash = "sha256:ebc55a14a21cb14062aa4162f906cd962b28e2e9ea38f9b4391244cd8de4ae0b" },
+]
+
+[[package]]
+name = "pypdf"
+version = "6.19.0"
+source = { registry = "https://mirrors.cloud.tencent.com/pypi/simple" }
+sdist = { url = "https://mirrors.cloud.tencent.com/pypi/packages/1f/ac/63d71aaedb59acbcdef491e6ca6469165e3771c9c74358204818fd9bc5a6/pypdf-6.19.0.tar.gz", hash = "sha256:bbc43aca292369ccc6cbc8a921991ecf2538a3587ab5a116eff06c321d647155" }
+wheels = [
+    { url = "https://mirrors.cloud.tencent.com/pypi/packages/3c/2c/c43c03eaf630435f023f1dc61ec4a4a78951ad5530a62c71cc89bde307b7/pypdf-6.19.0-py3-none-any.whl", hash = "sha256:7e5d6e730e7dae87d560a2cee218b852f6498c8be61966f3cd02ead971e48d14" },
 ]
 
 [[package]]

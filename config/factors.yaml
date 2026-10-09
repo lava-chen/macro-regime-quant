@@ -37,6 +37,17 @@ china:
         {source: cn_10y, transform: diff, periods: 3, weight: 0.25, sign: -1}
     min_components: 2
 
+  real_rate:
+    components:
+      ex_post_real_rate_proxy:
+        source: cn_10y
+        transform: real_rate_proxy
+        inflation_source: cn_cpi
+        weight: 1.0
+        sign: 1
+        optional: true
+    min_components: 1
+
 united_states:
   growth:
     components:

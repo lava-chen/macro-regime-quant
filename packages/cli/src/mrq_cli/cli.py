@@ -5,8 +5,13 @@ from pathlib import Path
 
 import pandas as pd
 import yaml
-from mrq_data.china_harvest import collect_china_snapshots
+from mrq_data.china_watch import (
+    append_live_records,
+    run_china_data_watch,
+    write_collection_audit_markdown,
+)
 from mrq_data.snapshots import validate_snapshot
+from mrq_engines.china_macro_report import build_china_macro_report
 from mrq_engines.pipeline import (
     build_china_baseline,
     build_us_baseline,
@@ -53,13 +58,28 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     collect = sub.add_parser(
-        "collect-china-snapshots",
-        help="Harvest NBS and PBOC original release pages with row-level evidence",
+        "refresh-china-macro",
+        aliases=["collect-china-snapshots"],
+        help="Incrementally collect NBS/PBOC data, audit changes, and write the PIT-safe report",
     )
-    collect.add_argument("--start-year", type=int, default=2005)
+    collect.add_argument("--start-year", type=int, default=None)
     collect.add_argument("--end-year", type=int, default=None)
     collect.add_argument("--output", default="data/raw/china")
+    collect.add_argument("--report-dir", default="reports/china_macro")
     collect.add_argument("--workers", type=int, default=2)
+    collect.add_argument("--full-rescan", action="store_true")
+    collect.add_argument("--as-of", default=None, help="Historical cutoff date (YYYY-MM-DD)")
+    collect.add_argument("--min-z-history", type=int, default=36)
+
+    china_report = sub.add_parser(
+        "report-china-macro",
+        help="Rebuild the China macro report offline from the immutable snapshot ledger",
+    )
+    china_report.add_argument("--ledger", default="data/raw/china/china_macro_snapshots.csv")
+    china_report.add_argument("--raw-dir", default="data/raw/china")
+    china_report.add_argument("--output", default="reports/china_macro")
+    china_report.add_argument("--as-of", default=None, help="Historical cutoff date (YYYY-MM-DD)")
+    china_report.add_argument("--min-z-history", type=int, default=36)
 
     snapshot = sub.add_parser(
         "validate-snapshot",
@@ -265,14 +285,49 @@ def main() -> None:
         )
         return
 
-    if args.command == "collect-china-snapshots":
-        audit = collect_china_snapshots(
-            args.output,
+    if args.command in {"refresh-china-macro", "collect-china-snapshots"}:
+        audit = run_china_data_watch(
+            raw_dir=args.output,
+            report_dir=args.report_dir,
             start_year=args.start_year,
             end_year=args.end_year,
             max_workers=args.workers,
+            full_rescan=args.full_rescan,
+            as_of=args.as_of,
         )
-        print(yaml.safe_dump(audit, sort_keys=False, allow_unicode=True))
+        write_collection_audit_markdown(audit, Path(args.report_dir) / "collection_audit.md")
+        report = build_china_macro_report(
+            ledger_path=Path(args.output) / "china_macro_snapshots.csv",
+            output_dir=args.report_dir,
+            as_of=args.as_of,
+            min_z_history=args.min_z_history,
+            collection_audit=audit,
+        )
+        print(yaml.safe_dump({
+            "collection_status": audit["status"],
+            "ledger_rows": audit["ledger_rows"],
+            "new_rows_appended": audit["new_rows_appended"],
+            "macro_state": report["macro_state"],
+            "report": str(Path(args.report_dir) / "latest.json"),
+        }, sort_keys=False, allow_unicode=True))
+        if audit["status"] != "success":
+            raise SystemExit(1)
+        return
+
+    if args.command == "report-china-macro":
+        ledger = Path(args.ledger)
+        append_live_records(ledger, [], raw_dir=args.raw_dir)
+        result = build_china_macro_report(
+            ledger_path=ledger,
+            output_dir=args.output,
+            as_of=args.as_of,
+            min_z_history=args.min_z_history,
+        )
+        print(yaml.safe_dump({
+            "as_of": result["as_of"],
+            "macro_state": result["macro_state"],
+            "report": str(Path(args.output) / "latest.json"),
+        }, sort_keys=False, allow_unicode=True))
         return
 
     if args.command == "validate-snapshot":

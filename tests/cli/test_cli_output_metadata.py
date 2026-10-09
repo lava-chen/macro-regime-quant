@@ -19,7 +19,7 @@ def test_china_cli_partial_mode_and_collector_defaults_are_explicit():
     assert args.availability_policy == "include_unverified"
 
     collect = build_parser().parse_args(["collect-china-snapshots"])
-    assert collect.start_year == 2005
+    assert collect.start_year is None  # checkpoint selects full bootstrap vs. incremental window
     assert collect.output == "data/raw/china"
     assert collect.workers == 2
 

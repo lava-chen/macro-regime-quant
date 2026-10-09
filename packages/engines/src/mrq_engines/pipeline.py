@@ -40,6 +40,8 @@ def _transform_monthly(series: pd.Series, transform: str, periods: int | None = 
         return series.pct_change(periods=periods or 1, fill_method=None)
     if transform == "distance_from_50":
         return series - 50.0
+    if transform == "real_rate_proxy":
+        raise ValueError("real_rate_proxy requires an inflation source; use _component_series")
     raise ValueError(f"Unknown transform: {transform}")
 
 
@@ -107,9 +109,7 @@ def load_monthly_panel(
         # Contract gate: every row reaching the panel has been checked for
         # available_date >= observation_date and for evidence backing an
         # evidenced basis. Violations raise here rather than silently skewing a backtest.
-        assert_frame_contract(
-            raw, require_available_date=availability_policy != "all"
-        )
+        assert_frame_contract(raw, require_available_date=availability_policy != "all")
 
         if availability_policy != "all":
             allowed = AVAILABILITY_POLICY_BASES[availability_policy]
@@ -127,11 +127,17 @@ def _component_series(
     min_z_history: int,
 ) -> pd.Series:
     source = cfg["source"]
-    transformed = _transform_monthly(
-        raw_panel[source],
-        transform=cfg.get("transform", "level"),
-        periods=cfg.get("periods"),
-    )
+    if cfg.get("transform") == "real_rate_proxy":
+        inflation_source = cfg.get("inflation_source")
+        if not inflation_source or inflation_source not in raw_panel.columns:
+            raise KeyError("real_rate_proxy requires a configured inflation_source")
+        transformed = raw_panel[source] - raw_panel[inflation_source]
+    else:
+        transformed = _transform_monthly(
+            raw_panel[source],
+            transform=cfg.get("transform", "level"),
+            periods=cfg.get("periods"),
+        )
     oriented = transformed * float(cfg.get("sign", 1.0))
     return expanding_zscore(oriented, min_periods=min_z_history)
 
@@ -151,11 +157,13 @@ def build_country_factors(
         weights: dict[str, float] = {}
 
         for component_name, component_cfg in factor_cfg["components"].items():
-            source = component_cfg["source"]
-            if source not in raw_panel.columns:
-                if allow_missing_components:
+            missing_inputs = _component_input_sources(component_cfg) - set(raw_panel.columns)
+            if missing_inputs:
+                if allow_missing_components or component_cfg.get("optional", False):
                     continue
-                raise KeyError(f"Missing source {source!r} required by factor {factor_name!r}")
+                raise KeyError(
+                    f"Missing sources {sorted(missing_inputs)!r} required by factor {factor_name!r}"
+                )
             components[component_name] = _component_series(
                 raw_panel,
                 component_cfg,
@@ -191,17 +199,26 @@ def country_source_coverage(
 
     factor_cfg = load_factor_config(factor_path)[country_key]
     sources = required_sources(factor_cfg)
+    optional = optional_sources(factor_cfg)
     catalog = load_catalog(catalog_path)
     csv_root = default_provider_registry()["csv"].root
     snapshot_sources = [key for key in sources if catalog[key].provider == "csv"]
     present = [key for key in snapshot_sources if (csv_root / catalog[key].symbol).is_file()]
     missing = [key for key in snapshot_sources if key not in present]
     provider_sources = [key for key in sources if catalog[key].provider != "csv"]
+    optional_snapshots = [key for key in optional if catalog[key].provider == "csv"]
+    present_optional = [
+        key for key in optional_snapshots if (csv_root / catalog[key].symbol).is_file()
+    ]
     return {
         "configured_sources": sources,
         "present_snapshots": present,
         "missing_snapshots": missing,
         "provider_backed_sources": provider_sources,
+        "optional_present_snapshots": present_optional,
+        "optional_missing_snapshots": [
+            key for key in optional_snapshots if key not in present_optional
+        ],
     }
 
 
@@ -209,8 +226,31 @@ def required_sources(country_cfg: dict[str, Any]) -> list[str]:
     keys: set[str] = set()
     for factor_cfg in country_cfg.values():
         for component_cfg in factor_cfg["components"].values():
-            keys.add(component_cfg["source"])
+            if not component_cfg.get("optional", False):
+                keys.update(_component_input_sources(component_cfg))
     return sorted(keys)
+
+
+def _component_input_sources(component_cfg: dict[str, Any]) -> set[str]:
+    inputs = {component_cfg["source"]}
+    if component_cfg.get("transform") == "real_rate_proxy":
+        inflation_source = component_cfg.get("inflation_source")
+        if inflation_source:
+            inputs.add(inflation_source)
+    return inputs
+
+
+def optional_sources(country_cfg: dict[str, Any]) -> list[str]:
+    """Return optional component inputs that may be loaded when a snapshot exists."""
+
+    optional = {
+        source
+        for factor_cfg in country_cfg.values()
+        for component_cfg in factor_cfg["components"].values()
+        if component_cfg.get("optional", False)
+        for source in _component_input_sources(component_cfg)
+    }
+    return sorted(optional - set(required_sources(country_cfg)))
 
 
 def _build_country_baseline(
@@ -226,6 +266,7 @@ def _build_country_baseline(
     end = end or pd.Timestamp.today().strftime("%Y-%m-%d")
     factor_cfg = load_factor_config(factor_path)[country_key]
     sources = required_sources(factor_cfg)
+    optional = optional_sources(factor_cfg)
     catalog = load_catalog(catalog_path)
     csv_root = default_provider_registry()["csv"].root
     missing = [
@@ -240,6 +281,13 @@ def _build_country_baseline(
         )
     if allow_partial_sources:
         sources = [key for key in sources if key not in missing]
+    sources.extend(
+        key
+        for key in optional
+        if key not in sources
+        and key in catalog
+        and (catalog[key].provider != "csv" or (csv_root / catalog[key].symbol).is_file())
+    )
     raw = load_monthly_panel(
         catalog_path,
         sources,
