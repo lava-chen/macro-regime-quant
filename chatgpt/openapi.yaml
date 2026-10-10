@@ -148,6 +148,76 @@ paths:
             application/json:
               schema: { type: object }
         '422': { description: Invalid strategy or data request }
+  /backtest-runs:
+    post:
+      operationId: submitBacktest
+      summary: Submit a backtest and receive its run ID
+      description: The durable single-process worker starts the run asynchronously. Poll the status endpoint, then retrieve the saved report.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, minLength: 1, maxLength: 128 }
+          description: Reusing the same key and request returns the original run; using the key for a different request returns 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              oneOf:
+                - required: [strategy]
+                  properties:
+                    strategy: { $ref: '#/components/schemas/Strategy' }
+                - required: [strategy_id]
+                  properties:
+                    strategy_id: { type: string }
+                    version: { type: integer, minimum: 1 }
+      responses:
+        '202':
+          description: Accepted; includes run_id and current status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [run_id, status]
+                properties:
+                  run_id: { type: string }
+                  status: { type: string, enum: [queued, running, succeeded, failed] }
+                  submitted_at: { type: string, format: date-time }
+                  started_at: { type: [string, 'null'], format: date-time }
+                  finished_at: { type: [string, 'null'], format: date-time }
+                  backtest_id: { type: [string, 'null'] }
+                  error: { type: [string, 'null'] }
+                  attempts: { type: integer }
+        '422': { description: Invalid strategy, data request, or idempotency conflict }
+  /backtest-runs/{run_id}:
+    get:
+      operationId: getBacktestStatus
+      summary: Read asynchronous backtest status
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema: { type: string, pattern: '^bt_[a-f0-9]{24}$' }
+      responses:
+        '200':
+          description: Queued, running, succeeded, or failed status
+          content:
+            application/json:
+              schema: { type: object }
+        '404': { description: Run was not found }
+  /data-status:
+    get:
+      operationId: getDataStatus
+      summary: Inspect available price snapshots and provider configuration
+      description: Provider configuration does not imply fetched coverage; local snapshots are schema-checked without filling missing values.
+      responses:
+        '200':
+          description: Coverage, retrieval metadata, checksum, and quality state per configured asset
+          content:
+            application/json:
+              schema: { type: object }
   /backtests/{run_id}:
     get:
       operationId: getBacktest

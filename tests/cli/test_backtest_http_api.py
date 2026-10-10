@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -9,11 +10,20 @@ import pytest
 from mrq_cli.backtest_workbench.http_api import create_server
 
 
-def _request(base: str, method: str, path: str, *, body: dict | None = None, token: str | None = None):
+def _request(
+    base: str,
+    method: str,
+    path: str,
+    *,
+    body: dict | None = None,
+    token: str | None = None,
+    extra_headers: dict[str, str] | None = None,
+):
     encoded = json.dumps(body).encode("utf-8") if body is not None else None
     headers = {"Content-Type": "application/json"}
     if token is not None:
         headers["Authorization"] = f"Bearer {token}"
+    headers.update(extra_headers or {})
     request = Request(f"{base}{path}", data=encoded, headers=headers, method=method)
     try:
         response = urlopen(request, timeout=5)
@@ -109,6 +119,61 @@ def test_http_end_to_end_strategy_save_run_and_report_retrieval(tmp_path, monkey
         assert report["strategy_version"]["version"] == 1
         assert len(report["strategy_version"]["spec_sha256"]) == 64
 
+        data_status_code, data_status = _request(
+            base, "GET", "/data-status", token="smoke-secret"
+        )
+        assert data_status_code == 200
+        data_assets = {asset["symbol"]: asset for asset in data_status["assets"]}
+        assert data_assets["GLD"]["availability"] == "snapshot_available"
+        assert data_assets["GLD"]["quality"] == "schema_validated_no_fills"
+        assert data_assets["QQQ"]["coverage_start"] == "2025-01-02"
+
+        run_payload = {"strategy_id": saved["strategy_id"], "version": 1}
+        queued_status, queued = _request(
+            base,
+            "POST",
+            "/backtest-runs",
+            body=run_payload,
+            token="smoke-secret",
+            extra_headers={"Idempotency-Key": "gold-nasdaq-async-once"},
+        )
+        assert queued_status == 202
+        assert queued["status"] in {"queued", "running", "succeeded"}
+        duplicate_status, duplicate = _request(
+            base,
+            "POST",
+            "/backtest-runs",
+            body=run_payload,
+            token="smoke-secret",
+            extra_headers={"Idempotency-Key": "gold-nasdaq-async-once"},
+        )
+        assert duplicate_status == 202
+        assert duplicate["run_id"] == queued["run_id"]
+
+        deadline = time.monotonic() + 5
+        async_result = queued
+        while time.monotonic() < deadline:
+            _, async_result = _request(
+                base,
+                "GET",
+                f"/backtest-runs/{queued['run_id']}",
+                token="smoke-secret",
+            )
+            if async_result["status"] in {"succeeded", "failed"}:
+                break
+            time.sleep(0.01)
+        assert async_result["status"] == "succeeded"
+        assert async_result["backtest_id"] == queued["run_id"]
+        async_report_status, async_report = _request(
+            base,
+            "GET",
+            f"/backtests/{queued['run_id']}",
+            token="smoke-secret",
+        )
+        assert async_report_status == 200
+        assert async_report["backtest_id"] == queued["run_id"]
+        assert async_report["strategy_version"]["version"] == 1
+
         restored_status, restored = _request(
             base,
             "GET",
@@ -172,6 +237,7 @@ def test_http_end_to_end_strategy_save_run_and_report_retrieval(tmp_path, monkey
 
 def test_http_auth_is_required_and_missing_server_token_fails_closed(tmp_path, monkeypatch):
     monkeypatch.delenv("MRQ_API_TOKEN", raising=False)
+    monkeypatch.setenv("MRQ_STATE_DIR", str(tmp_path / "private-state"))
     try:
         server = create_server("127.0.0.1", 0)
     except PermissionError:

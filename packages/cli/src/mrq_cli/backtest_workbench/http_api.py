@@ -5,11 +5,13 @@ import hmac
 import json
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
 from .models import StrategySpec
-from .prices import available_market_symbols
+from .prices import available_market_symbols, market_data_status
+from .runs import BacktestRunStore, BacktestRunWorker
 from .service import execute_backtest, read_backtest_report
 from .store import StrategyStore
 
@@ -29,6 +31,8 @@ class BacktestRequestHandler(BaseHTTPRequestHandler):
         try:
             if path == "/assets":
                 self._send_json(200, {"assets": available_market_symbols()})
+            elif path == "/data-status":
+                self._send_json(200, market_data_status(os.environ.get("MRQ_PROJECT_ROOT")))
             elif path == "/strategies":
                 self._send_json(200, {"strategies": [row.to_dict() for row in StrategyStore().list()]})
             elif path.startswith("/strategies/"):
@@ -45,6 +49,9 @@ class BacktestRequestHandler(BaseHTTPRequestHandler):
                     )
                 else:
                     self._send_error_json(404, "Unknown endpoint")
+            elif path.startswith("/backtest-runs/"):
+                run_id = path.removeprefix("/backtest-runs/")
+                self._send_json(200, self.server.run_store.get(run_id))  # type: ignore[attr-defined]
             elif path.startswith("/backtests/"):
                 run_id = path.removeprefix("/backtests/")
                 self._send_json(200, read_backtest_report(run_id))
@@ -66,8 +73,10 @@ class BacktestRequestHandler(BaseHTTPRequestHandler):
                 spec = StrategySpec.from_dict(payload)
                 record = StrategyStore().save(spec)
                 self._send_json(201, record.to_dict())
-            elif self.path.split("?", 1)[0] == "/backtests":
+            elif urlsplit(self.path).path == "/backtests":
                 self._run_backtest(payload)
+            elif urlsplit(self.path).path == "/backtest-runs":
+                self._submit_backtest(payload)
             else:
                 self._send_error_json(404, "Unknown endpoint")
         except FileExistsError as exc:
@@ -98,37 +107,22 @@ class BacktestRequestHandler(BaseHTTPRequestHandler):
             self._send_error_json(422, str(exc))
 
     def _run_backtest(self, payload: dict[str, Any]) -> None:
-        strategy_id = payload.get("strategy_id")
-        inline_strategy = payload.get("strategy")
-        if bool(strategy_id) == bool(inline_strategy):
-            raise ValueError("Provide exactly one of strategy_id or strategy")
-        strategy_version = None
-        if strategy_id:
-            store = StrategyStore()
-            requested_version = payload.get("version")
-            record = (
-                store.get_version(str(strategy_id), int(requested_version))
-                if requested_version is not None
-                else store.get(str(strategy_id))
-            )
-            strategy = record.spec
-            canonical = json.dumps(record.spec.to_dict(), sort_keys=True, separators=(",", ":"))
-            strategy_version = {
-                "strategy_id": record.strategy_id,
-                "version": record.version,
-                "spec_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
-            }
-        elif isinstance(inline_strategy, dict):
-            strategy = StrategySpec.from_dict(inline_strategy)
-        else:
-            raise ValueError("strategy must be a JSON object")
-        report = execute_backtest(
-            strategy,
+        prepared = _prepare_backtest(payload)
+        report = _execute_prepared_backtest(
+            prepared,
             project_root=os.environ.get("MRQ_PROJECT_ROOT"),
             state_root=os.environ.get("MRQ_STATE_DIR"),
-            strategy_version=strategy_version,
         )
         self._send_json(200, report)
+
+    def _submit_backtest(self, payload: dict[str, Any]) -> None:
+        prepared = _prepare_backtest(payload)
+        key = self.headers.get("Idempotency-Key") or payload.get("idempotency_key")
+        if key is not None and not isinstance(key, str):
+            raise TypeError("Idempotency-Key must be a string")
+        job = self.server.run_store.submit(prepared, idempotency_key=key)  # type: ignore[attr-defined]
+        self.server.run_worker.wake()  # type: ignore[attr-defined]
+        self._send_json(202, job)
 
     def _authorized(self) -> bool:
         expected = os.environ.get("MRQ_API_TOKEN", "")
@@ -180,8 +174,76 @@ class BacktestRequestHandler(BaseHTTPRequestHandler):
         super().log_message(format_string, *args)
 
 
-def create_server(host: str = "127.0.0.1", port: int = 8000) -> ThreadingHTTPServer:
-    return ThreadingHTTPServer((host, port), BacktestRequestHandler)
+class BacktestHTTPServer(ThreadingHTTPServer):
+    daemon_threads = True
+
+    def __init__(self, host: str, port: int) -> None:
+        super().__init__((host, port), BacktestRequestHandler)
+        state_root = Path(os.environ.get("MRQ_STATE_DIR", "~/.macro-regime-quant")).expanduser()
+        self.run_store = BacktestRunStore(state_root)
+        self.run_worker = BacktestRunWorker(self.run_store, _execute_queued_request).start()
+
+    def server_close(self) -> None:
+        self.run_worker.close()
+        super().server_close()
+
+
+def _prepare_backtest(payload: dict[str, Any]) -> dict[str, Any]:
+    strategy_id = payload.get("strategy_id")
+    inline_strategy = payload.get("strategy")
+    if bool(strategy_id) == bool(inline_strategy):
+        raise ValueError("Provide exactly one of strategy_id or strategy")
+    strategy_version = None
+    if strategy_id:
+        store = StrategyStore()
+        requested_version = payload.get("version")
+        record = (
+            store.get_version(str(strategy_id), int(requested_version))
+            if requested_version is not None
+            else store.get(str(strategy_id))
+        )
+        strategy = record.spec
+        canonical = json.dumps(record.spec.to_dict(), sort_keys=True, separators=(",", ":"))
+        strategy_version = {
+            "strategy_id": record.strategy_id,
+            "version": record.version,
+            "spec_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+        }
+    elif isinstance(inline_strategy, dict):
+        strategy = StrategySpec.from_dict(inline_strategy)
+    else:
+        raise ValueError("strategy must be a JSON object")
+    return {"strategy": strategy.to_dict(), "strategy_version": strategy_version}
+
+
+def _execute_prepared_backtest(
+    prepared: dict[str, Any],
+    *,
+    project_root: str | None,
+    state_root: str | None,
+    run_id: str | None = None,
+) -> dict[str, Any]:
+    strategy = StrategySpec.from_dict(dict(prepared["strategy"]))
+    return execute_backtest(
+        strategy,
+        project_root=project_root,
+        state_root=state_root,
+        strategy_version=prepared.get("strategy_version"),
+        run_id=run_id,
+    )
+
+
+def _execute_queued_request(run_id: str, prepared: dict[str, Any]) -> dict[str, Any]:
+    return _execute_prepared_backtest(
+        prepared,
+        project_root=os.environ.get("MRQ_PROJECT_ROOT"),
+        state_root=os.environ.get("MRQ_STATE_DIR"),
+        run_id=run_id,
+    )
+
+
+def create_server(host: str = "127.0.0.1", port: int = 8000) -> BacktestHTTPServer:
+    return BacktestHTTPServer(host, port)
 
 
 def serve_api(host: str = "127.0.0.1", port: int = 8000) -> None:
@@ -189,7 +251,7 @@ def serve_api(host: str = "127.0.0.1", port: int = 8000) -> None:
         raise SystemExit("Set MRQ_API_TOKEN before starting the backtest API")
     server = create_server(host, port)
     print(f"Backtest API listening on http://{host}:{server.server_port}")
-    print("Health: /health · OpenAPI action schema: chatgpt/openapi.yaml")
+    print("Health: /health · Async runs: /backtest-runs · OpenAPI: chatgpt/openapi.yaml")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
