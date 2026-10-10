@@ -81,6 +81,47 @@ paths:
             application/json:
               schema: { type: object }
         '404': { description: Strategy not found }
+  /strategies/{strategy_id}/versions:
+    get:
+      operationId: listStrategyVersions
+      summary: List immutable saved versions of a strategy
+      parameters:
+        - name: strategy_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Strategy versions in ascending version order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items: { type: object }
+        '404': { description: Strategy not found }
+  /strategies/{strategy_id}/versions/{version}:
+    get:
+      operationId: getStrategyVersion
+      summary: Retrieve an immutable strategy version
+      parameters:
+        - name: strategy_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: version
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Immutable strategy definition for the requested version
+          content:
+            application/json:
+              schema: { type: object }
+        '404': { description: Strategy version not found }
   /backtests:
     post:
       operationId: runBacktest
@@ -99,6 +140,7 @@ paths:
                 - required: [strategy_id]
                   properties:
                     strategy_id: { type: string }
+                    version: { type: integer, minimum: 1, description: Saved strategy version; defaults to latest. }
       responses:
         '200':
           description: Detailed backtest report

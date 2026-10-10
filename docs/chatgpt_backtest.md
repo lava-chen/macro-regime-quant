@@ -26,6 +26,8 @@ The API has no order placement, account access, or arbitrary code execution endp
 
 Weights are long-only, must sum to 1, and may include `CASH`. Supported schedules are `buy_and_hold`, `monthly`, `quarterly`, and `annual`. Start and end dates are inclusive. Defaults are monthly rebalancing, USD 10,000 starting capital, and 5 bps transaction cost. For GLD/QQQ the strategy currency is USD; no FX conversion, taxes, fund premiums, or impact costs are modeled.
 
+For the ordinary allocation engine, a signal from close *t* fills at the next available close. The return ending on that fill date belongs to the old holdings; the new weights begin earning after the fill. `effective_weights` show interval exposure, while `ending_weights` show post-fill exposure. Explicit `CASH` is residual zero-yield cash, not a traded security, so it does not add a second leg to transaction-cost turnover.
+
 Example:
 
 ```json
@@ -41,7 +43,7 @@ Example:
 }
 ```
 
-An optional `cash_flow` plan adds a weekly deposit, cumulative time-weighted-return take-profit tiers, peak-to-trough drawdown exposure caps, and optional cash reinvestment. With `reinvest_cash: true`, idle proceeds from earlier sales are redeployed on the next selected weekly contribution date, subject to the current invested-weight cap; the new weekly deposit is accounted for separately. For example, `return_threshold: 0.20` is a one-time 20% TWR trigger; `sell_fraction: 0.10` sells 10% of risk holdings at the next available close. A `trigger_drawdown: 0.15` rule with `max_invested_weight: 0.50` caps risk assets at 50% of account equity after the next-close execution. Deposits are excluded from TWR and drawdown; the report includes XIRR, all contributions, paid fees, cash balance, trade/event logs, and a same-cash-flow DCA-only benchmark. A drawdown cap reduces exposure but cannot guarantee a maximum loss.
+An optional `cash_flow` plan adds a weekly deposit, cumulative time-weighted-return take-profit tiers, peak-to-trough drawdown exposure caps, and optional cash reinvestment. With `reinvest_cash: true`, only idle cash already held at the previous close is redeployed on the next selected weekly contribution date; sale proceeds generated at that same close wait until a later contribution date. For example, `return_threshold: 0.20` is a one-time 20% TWR trigger; `sell_fraction: 0.10` sells 10% of risk holdings at the next available close. A `trigger_drawdown: 0.15` rule with `max_invested_weight: 0.50` caps risk assets at 50% of account equity after the next-close execution. Deposit principal is excluded from unitized returns and drawdown; fees remain in performance. The report includes XIRR, all contributions, paid fees, cash balance, trade/event logs, and a same-cash-flow DCA-only benchmark. A drawdown cap reduces exposure but cannot guarantee a maximum loss.
 
 ```json
 {
@@ -66,7 +68,7 @@ For a reproducible 2×2×2 GLD/QQQ ablation that isolates take-profit, drawdown 
 
 ## Data and interpretation
 
-The default market source is the repository's configured Yahoo adapter with `auto_adjust=True`; a normalized local file at `data/raw/market/<SYMBOL>.csv` takes priority. Local files use `date` or `observation_date` plus `adjusted_close`, `adj_close`, `close`, or `value`. The report includes source dates, retrieval time, price basis, input checksum, aligned date range, and missing-row count. Yahoo data is used for the personal backtest, not mirrored into the public repository. Provider history is not a point-in-time vintage, so a run is reproducible from its stored snapshot but does not establish historical publication-time availability of adjusted prices.
+The default market source is the repository's configured Yahoo adapter with `auto_adjust=True`; a normalized local file at `data/raw/market/<SYMBOL>.csv` takes priority. Local files use `date` or `observation_date` plus `adjusted_close`, `adj_close`, `close`, or `value`. Rows outside the assets' shared coverage window are trimmed; missing rows inside it stop the run unless the inputs have been explicitly aligned using verified market calendars. The report includes source dates, retrieval time, price basis, input checksum, aligned date range, and trimmed-row count. Yahoo data is used for the personal backtest, not mirrored into the public repository. Provider history is not a point-in-time vintage, so a run is reproducible from its stored snapshot but does not establish historical publication-time availability of adjusted prices.
 
 The three external repositories `guidebee/china-stock-data`, `henrywuu91/quant-data`, and `modi-hu/stock-data` are currently source references only. No raw files from them are mirrored by this API. Check licensing, schemas, corporate-action conventions, and date coverage before importing any of their files.
 
@@ -75,5 +77,6 @@ The three external repositories `guidebee/china-stock-data`, `henrywuu91/quant-d
 - `GET /health`: liveness check.
 - `GET /assets`: configured assets.
 - `GET /strategies`, `POST /strategies`, `PUT /strategies/{id}`: list, save, and version updates to strategies.
+- `GET /strategies/{id}/versions`, `GET /strategies/{id}/versions/{version}`: retrieve immutable saved versions. `POST /backtests` accepts an optional `version` when using `strategy_id`.
 - `POST /backtests`: run an inline or saved strategy and persist a report/snapshot.
 - `GET /backtests/{run_id}`: retrieve a saved report.

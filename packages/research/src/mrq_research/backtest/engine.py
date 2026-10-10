@@ -53,10 +53,12 @@ def run_backtest(
     """Run a transparent close-to-next-period backtest.
 
     Contract:
-    - prices: rows are observation dates, columns are assets;
-    - target_weights: sparse or dense desired weights indexed by signal date;
-    - a signal generated on t becomes effective only after `execution_lag_periods`;
-    - trading cost is charged on absolute portfolio turnover.
+    - Each return dated t measures the close(t-1)-to-close(t) interval.
+    - A signal dated t executes at close(t + execution_lag_periods).
+    - Market returns dated t are earned by holdings from the prior close.
+    - Same-close trades pay costs after the market return and affect later returns.
+    - effective_weights are the weights that earn the dated interval;
+      ending_weights are the weights after that close's trades.
 
     This simple contract is intentionally conservative and easy to audit.
     """
@@ -77,6 +79,9 @@ def run_backtest(
         raise ValueError("Prices must be complete and finite; align data before backtesting")
     if (prices <= 0).any().any():
         raise ValueError("Prices must be greater than zero")
+    unknown_assets = sorted(set(target_weights.columns) - set(prices.columns))
+    if unknown_assets:
+        raise ValueError(f"Target weights reference assets with no price series: {unknown_assets}")
     target_weights = target_weights.sort_index().reindex(columns=prices.columns, fill_value=0.0)
     _validate_weights(target_weights, config.allow_cash)
     if len(target_weights.index.difference(prices.index)):
@@ -94,32 +99,48 @@ def run_backtest(
     net = pd.Series(0.0, index=prices.index, dtype=float)
 
     holdings = pd.Series(0.0, index=prices.columns, dtype=float)
+    cost_rate = config.transaction_cost_bps / 10_000.0
     for position, trade_date in enumerate(prices.index):
+        # Returns stamped with `trade_date` accrue to positions held at the
+        # preceding close. On the first observation the prehistory is flat.
+        period_returns = asset_returns.loc[trade_date]
         instruction = instructions.iloc[position]
+        effective.loc[trade_date] = holdings
+        gross.iloc[position] = float((holdings * period_returns).sum())
+
+        # Mark the account to the close before filling any orders scheduled for
+        # this close. Unallocated capital is zero-return cash.
+        cash = max(0.0, 1.0 - float(holdings.sum()))
+        market_growth = float((holdings * (1.0 + period_returns)).sum() + cash)
+        if market_growth <= 0:
+            raise ValueError("Portfolio value became non-positive")
+
+        drifted_holdings = holdings * (1.0 + period_returns) / market_growth
+        cost_fraction = 0.0
         if instruction.notna().all():
             target = instruction.astype(float)
-            turnover.iloc[position] = float((target - holdings).abs().sum())
+            turnover.iloc[position] = float((target - drifted_holdings).abs().sum())
+            cost_fraction = turnover.iloc[position] * cost_rate
             holdings = target
-        effective.loc[trade_date] = holdings
-        gross.iloc[position] = float((holdings * asset_returns.loc[trade_date]).sum())
-        cost = turnover.iloc[position] * (config.transaction_cost_bps / 10_000.0)
-        net.iloc[position] = gross.iloc[position] - cost
-        if net.iloc[position] <= -1.0:
-            raise ValueError("Return and transaction costs make portfolio value non-positive")
+        else:
+            holdings = drifted_holdings
 
-        # Unallocated capital is zero-return cash when allow_cash=True.
-        cash = max(0.0, 1.0 - float(holdings.sum()))
-        portfolio_growth = float((holdings * (1.0 + asset_returns.loc[trade_date])).sum() + cash)
-        if portfolio_growth <= 0:
-            raise ValueError("Portfolio value became non-positive")
-        holdings = holdings * (1.0 + asset_returns.loc[trade_date]) / portfolio_growth
+        # A proportional fee is paid at the closing fill from post-market
+        # equity. This makes the compounded account value equal the dollar
+        # ledger: market P&L first, then fee, then target weights.
+        net_growth = market_growth * (1.0 - cost_fraction)
+        net.iloc[position] = net_growth - 1.0
+        if net_growth <= 0 or net.iloc[position] <= -1.0:
+            raise ValueError("Return and transaction costs make portfolio value non-positive")
         ending_weights.loc[trade_date] = holdings
 
-    metrics = summary(net.iloc[1:] if len(net) > 1 else net, config.periods_per_year)
+    metrics = summary(net, config.periods_per_year)
     periods = max(1, len(prices) - 1)
     growth = float((1.0 + net).prod())
     metrics["cagr"] = growth ** (config.periods_per_year / periods) - 1.0
-    metrics["max_drawdown"] = max_drawdown(net)
+    # Include the pre-trade unit value of 1.0 so a lag=0 entry fee cannot
+    # disappear merely because the first recorded post-trade value is the peak.
+    metrics["max_drawdown"] = max_drawdown(pd.concat([pd.Series([0.0]), net], ignore_index=True))
     metrics["calmar"] = (
         float(metrics["cagr"] / abs(metrics["max_drawdown"]))
         if metrics["max_drawdown"] < 0

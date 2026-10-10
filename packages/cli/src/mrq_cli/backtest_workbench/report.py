@@ -31,7 +31,8 @@ def build_backtest_report(
         drawdown_basis = equity
         total_return = float(equity.iloc[-1] / strategy.initial_capital - 1.0)
     gross_growth = float((1.0 + portfolio_run.result.gross_returns).prod())
-    drawdown = drawdown_basis / drawdown_basis.cummax() - 1.0
+    initial_nav = 1.0 if cash_flow_details else strategy.initial_capital
+    drawdown = drawdown_basis / drawdown_basis.cummax().clip(lower=initial_nav) - 1.0
     monthly = returns.groupby(returns.index.to_period("M")).apply(lambda values: (1 + values).prod() - 1)
     annual = returns.groupby(returns.index.year).apply(lambda values: (1 + values).prod() - 1)
     result_metrics = dict(portfolio_run.result.metrics)
@@ -81,7 +82,11 @@ def build_backtest_report(
         "drawdown": {
             "max_drawdown": _json_float(drawdown.min()),
             "basis": "unitized NAV excluding external contributions" if cash_flow_details else "account equity",
-            "episode": _drawdown_episode(drawdown_basis, drawdown),
+            "episode": _drawdown_episode(
+                drawdown_basis,
+                drawdown,
+                initial_value=initial_nav,
+            ),
             "monthly_series": _sample_series(drawdown, "drawdown"),
         },
         "weights_month_end": _month_end_weights(portfolio_run.result.ending_weights),
@@ -94,7 +99,7 @@ def build_backtest_report(
         },
         "methodology": {
             "price_basis": "Adjusted close where supplied; no missing prices are filled.",
-            "execution": "Signal at close t takes effect for the next available close-to-close return.",
+            "execution": "Signal at close t executes at the next available close; the return ending on the fill date belongs to pre-fill holdings, and new holdings earn returns after that close.",
             "rebalancing": strategy.rebalance_frequency,
             "transaction_cost": "Cost in basis points multiplied by gross traded notional (absolute weight change).",
             "portfolio": "Long-only; weights drift between target-weight instructions; residual weight is zero-return cash.",
@@ -102,7 +107,7 @@ def build_backtest_report(
             "cash_flows": (
                 "No recurring deposits or withdrawals are modeled."
                 if cash_flow_details is None
-                else "Weekly deposits are added at the selected week-ending close and excluded from time-weighted return and drawdown."
+                else "Weekly deposits are added at the selected week-ending close; unitized returns exclude deposit principal. Initial fees and portfolio fees are included in performance."
             ),
             "taxes": "Taxes, fund premiums, and market impact beyond the configured transaction cost are not modeled.",
         },
@@ -155,7 +160,7 @@ def build_markdown_report(report: dict[str, Any]) -> str:
         "",
         f"- Target weights: {', '.join(f'{k} {v:.1%}' for k, v in strategy['weights'].items())}",
         f"- Rebalance: {strategy['rebalance_frequency']}; transaction cost: {strategy['transaction_cost_bps']} bps per traded notional.",
-        "- Close-derived risk signals execute at the next available close; no tax or market impact beyond the fee assumption.",
+        "- A signal at close t fills at the next available close; that fill-date return belongs to the pre-fill holdings. No tax or market impact beyond the fee assumption.",
         "- Price snapshots and checksums are retained with this run; provider history is not a point-in-time vintage.",
         "",
         ]
@@ -203,13 +208,21 @@ def _month_end_weights(weights: pd.DataFrame) -> list[dict[str, object]]:
     ]
 
 
-def _drawdown_episode(equity: pd.Series, drawdown: pd.Series) -> dict[str, object] | None:
+def _drawdown_episode(
+    equity: pd.Series,
+    drawdown: pd.Series,
+    *,
+    initial_value: float | None = None,
+) -> dict[str, object] | None:
     if equity.empty or float(drawdown.min()) >= 0:
         return None
     trough = drawdown.idxmin()
     prior = equity.loc[:trough]
     peak = prior.idxmax()
     peak_value = float(equity.loc[peak])
+    if initial_value is not None and initial_value > peak_value:
+        peak_value = initial_value
+        peak = equity.index[0]
     recovery_dates = equity.index[(equity.index > trough) & (equity >= peak_value)]
     recovery = recovery_dates[0] if len(recovery_dates) else None
     return {

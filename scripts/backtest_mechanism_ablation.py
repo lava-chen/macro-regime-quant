@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 from datetime import UTC, datetime
 from itertools import product
@@ -24,7 +25,11 @@ from mrq_cli.backtest_workbench.models import (
     TakeProfitTier,
 )
 from mrq_cli.backtest_workbench.prices import load_market_prices
-from mrq_cli.backtest_workbench.runner import PortfolioRun, run_portfolio_backtest
+from mrq_cli.backtest_workbench.runner import (
+    PortfolioRun,
+    _select_common_complete_prices,
+    run_portfolio_backtest,
+)
 
 TP_TIERS = (
     TakeProfitTier(return_threshold=0.20, sell_fraction=0.10),
@@ -64,7 +69,9 @@ def run_ablation(
         end=end_date,
         project_root=project_root,
     )
-    aligned = prices.loc[:, ["GLD", "QQQ"]].dropna(how="any").sort_index()
+    aligned, dropped_nonoverlap_rows = _select_common_complete_prices(
+        prices.loc[:, ["GLD", "QQQ"]].sort_index()
+    )
     if len(aligned) < 2:
         raise ValueError("The requested dates contain fewer than two common GLD/QQQ prices")
     if aligned.isna().any().any() or (aligned <= 0).any().any():
@@ -113,7 +120,7 @@ def run_ablation(
             raise RuntimeError(f"Cash-flow run {experiment_id} omitted account series")
         weights = run.result.ending_weights
         cash = weights["CASH"]
-        drawdown_series = unit_nav / unit_nav.cummax() - 1.0
+        drawdown_series = unit_nav / unit_nav.cummax().clip(lower=1.0) - 1.0
         for column, series in {
             f"{experiment_id}_daily_twr_return": returns,
             f"{experiment_id}_unit_nav": unit_nav,
@@ -170,6 +177,7 @@ def run_ablation(
     focused_comparisons = _focused_comparisons(summaries)
     report: dict[str, Any] = {
         "schema_version": 1,
+        "accounting_semantics": "close-fill-after-mark-to-market-v2",
         "generated_at": datetime.now(UTC).isoformat(),
         "data": {
             "symbols": ["GLD", "QQQ"],
@@ -178,7 +186,8 @@ def run_ablation(
             "start_date": aligned.index.min().date().isoformat(),
             "end_date": aligned.index.max().date().isoformat(),
             "observations": len(aligned),
-            "join": "Inner join of common observed sessions; no fill or interpolation.",
+            "join": "Rows outside the shared history are trimmed; internal missing rows are rejected unless prices are explicitly calendar-aligned. No fill or interpolation.",
+            "dropped_nonoverlap_rows": dropped_nonoverlap_rows,
             "source_files_sha256": raw_hashes,
             "aligned_snapshot_sha256": aligned_sha256,
             "price_sources": [source.to_dict() for source in price_sources],
@@ -214,7 +223,7 @@ def run_ablation(
             "maximum_weight_sum_error": max_weight_sum_error,
             "daily_unit_nav_finite": True,
             "aligned_snapshot_sha256": aligned_sha256,
-            "historical_reference_check": historical_reference_check,
+            "legacy_report_comparison": historical_reference_check,
         },
         "artifacts": {
             "aligned_snapshot": "aligned_market_snapshot.csv",
@@ -259,6 +268,41 @@ def _historical_reference_check(
             "max_drawdown": -0.3094826432477483,
             "transaction_costs": 33.558220889555194,
         },
+        "TP0_DD0_RI1": {
+            "twr_total_return": 16.134561169114992,
+            "xirr": 0.14415869889949434,
+            "ending_value": 540_958.5624888747,
+            "max_drawdown": -0.3094826432477483,
+            "transaction_costs": 33.558220889555194,
+        },
+        "TP0_DD1_RI0": {
+            "twr_total_return": 6.921106547279887,
+            "xirr": 0.10542411972816465,
+            "ending_value": 297_356.531320164,
+            "max_drawdown": -0.2460090793352766,
+            "transaction_costs": 290.78651121808963,
+        },
+        "TP0_DD1_RI1": {
+            "twr_total_return": 7.060691378278094,
+            "xirr": 0.10652921159504383,
+            "ending_value": 302_408.0657087549,
+            "max_drawdown": -0.24989411191030864,
+            "transaction_costs": 291.88240273836266,
+        },
+        "TP1_DD0_RI0": {
+            "twr_total_return": 12.4562774177063,
+            "xirr": 0.1326279778290041,
+            "ending_value": 452_026.4527643341,
+            "max_drawdown": -0.2894887982662341,
+            "transaction_costs": 37.93922506965224,
+        },
+        "TP1_DD0_RI1": {
+            "twr_total_return": 16.188069712037784,
+            "xirr": 0.14456056155512714,
+            "ending_value": 544_364.5251618298,
+            "max_drawdown": -0.3134435035315616,
+            "transaction_costs": 43.27967322436837,
+        },
         "TP1_DD1_RI0": {
             "twr_total_return": 6.8155653051770715,
             "xirr": 0.1046859333403484,
@@ -266,29 +310,38 @@ def _historical_reference_check(
             "max_drawdown": -0.23690445830617868,
             "transaction_costs": 287.7487513358448,
         },
+        "TP1_DD1_RI1": {
+            "twr_total_return": 7.072163563187704,
+            "xirr": 0.10658080400711095,
+            "ending_value": 302_646.1077952213,
+            "max_drawdown": -0.24937431975131463,
+            "transaction_costs": 304.0934676188978,
+        },
     }
     actual_by_id = {row["experiment_id"]: row for row in summaries}
     comparisons: list[dict[str, Any]] = []
     for experiment_id, metrics in expected.items():
         actual = actual_by_id[experiment_id]
         differences = {metric: float(actual[metric] - value) for metric, value in metrics.items()}
-        passed = all(
-            abs(differences[metric]) <= (0.01 if metric in {"ending_value", "transaction_costs"} else 1e-10)
-            for metric in metrics
-        )
         comparisons.append(
             {
                 "experiment_id": experiment_id,
-                "status": "passed" if passed else "failed",
-                "expected": metrics,
-                "observed": {metric: actual[metric] for metric in metrics},
-                "difference": differences,
+                "legacy_result": metrics,
+                "corrected_result": {metric: actual[metric] for metric in metrics},
+                "change_after_accounting_fix": differences,
             }
         )
-    status = "passed" if all(row["status"] == "passed" for row in comparisons) else "failed"
-    if status == "failed":
-        raise RuntimeError("Historical reproduction check differs from the saved reference report")
-    return {"status": status, "comparisons": comparisons}
+    return {
+        "status": "comparison_only_after_accounting_fix",
+        "legacy_code_commit": "0af82015b8b48ea8ba240f2bec2e393d8572dbe7",
+        "note": (
+            "The cash-flow engine already marked market P&L before delayed signal fills. "
+            "The two reinvestment-enabled take-profit variants change because sale proceeds "
+            "executed at a contribution close now wait until a later contribution date. "
+            "These legacy values remain comparative references, not golden assertions."
+        ),
+        "comparisons": comparisons,
+    }
 
 
 def _focused_comparisons(summaries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -451,7 +504,7 @@ def _render_markdown(report: dict[str, Any]) -> str:
         "",
         "## 设计",
         "",
-        "全因子 2×2×2：分别开关阶梯止盈、回撤限仓、现金再投资。八种组合共用同一行情快照、每周投入、费率、日期区间与权重。新贡献当周按目标 50/50 投入；已持有闲置现金只在启用再投资时，按每周节奏、且在满足当前回撤限仓后投入。收盘触发的止盈/回撤信号次个可用交易日执行。",
+        "全因子 2×2×2：分别开关阶梯止盈、回撤限仓、现金再投资。八种组合共用同一行情快照、每周投入、费率、日期区间与权重。初始资金在起始收盘成交；每周新投入在该周最后可用收盘计入并按目标配置投入。收盘触发的止盈/回撤信号于下一可用收盘成交；成交日收盘前的价格变化归原持仓。再投资仅使用前一收盘已经持有的现金，同日卖出所得留待之后的投入日。",
         "",
         f"参数：初始 ${assumptions['initial_capital']:,.0f}；每周 ${assumptions['weekly_contribution']:,.0f}；交易费用 {assumptions['transaction_cost_bps']:.1f} bps；止盈档位 20/35/50%（卖出当时风险持仓的 10/15/20%）；回撤限仓 15%→50%、25%→25%。现金收益率为 0%。",
         "",
@@ -504,19 +557,28 @@ def _render_markdown(report: dict[str, Any]) -> str:
         lines.append(
             f"| {comparison['comparison']} | {comparison['baseline_id']} | {comparison['variant_id']} | ${delta['ending_value']:+,.0f} | {delta['xirr'] * 100:+.2f} pp | {delta['max_drawdown'] * 100:+.2f} pp |"
         )
-    reference = report["quality_checks"]["historical_reference_check"]
-    lines.extend(["", "## 历史报告独立复现", ""])
-    if reference["status"] == "passed":
+    reference = report["quality_checks"]["legacy_report_comparison"]
+    lines.extend(["", "## 与旧报告的差异", ""])
+    if reference["status"] == "comparison_only_after_accounting_fix":
         lines.append(
-            "旧报告中的 DCA-only 与「止盈 + 回撤限仓」两组结果均使用同一行情文件和实现重新计算，并通过冻结参考值核验（期末金额误差不超过 $0.01，其余误差不超过 1e-10）。"
+            "沿用旧报告的 GLD/QQQ 行情快照和参数。现金流引擎此前已先计行情收益、再执行延迟信号；本次改变的是同一贡献日成交的止盈卖出款何时可再投入。因此只有两组开启止盈与再投资的结果发生变化。标准无现金流引擎的成交时序修复另见新的 50/50 报告。"
+        )
+        lines.extend(
+            [
+                "",
+                "| 组合 | 旧期末账户 | 新期末账户 | 旧 XIRR | 新 XIRR | 旧最大回撤 | 新最大回撤 |",
+                "|---|---:|---:|---:|---:|---:|---:|",
+            ]
         )
         for comparison in reference["comparisons"]:
-            observed = comparison["observed"]
+            old = comparison["legacy_result"]
+            new = comparison["corrected_result"]
             lines.append(
-                f"- `{comparison['experiment_id']}`：期末 ${observed['ending_value']:,.2f}；XIRR {observed['xirr']:.4%}；TWR {observed['twr_total_return']:.4%}；最大回撤 {observed['max_drawdown']:.4%}。"
+                f"| {comparison['experiment_id']} | ${old['ending_value']:,.2f} | ${new['ending_value']:,.2f} | {old['xirr']:.2%} | {new['xirr']:.2%} | {old['max_drawdown']:.2%} | {new['max_drawdown']:.2%} |"
             )
+        lines.append(f"\n- {reference['note']}")
     else:
-        lines.append("当前输入快照或假设与旧报告不同，未执行旧报告黄金值核验。")
+        lines.append("旧报告输入快照或基础假设不匹配；未生成数值对比。")
     lines.append("对照 sanity check：不产生销售现金时，现金再投资开关结果相同；八组日度现金权重非负、资产加现金权重合计为 100%。")
     lines.extend(
         [
@@ -548,7 +610,7 @@ def _render_markdown(report: dict[str, Any]) -> str:
             "  --project-root . \\",
             "  --start-date 2004-11-18 \\",
             "  --end-date 2026-10-09 \\",
-            "  --output-dir reports/backtests/gld_qqq_mechanism_ablation",
+            "  --output-dir reports/backtests/gld_qqq_mechanism_ablation_p0_v2",
             "```",
             "",
             "## 限制",
@@ -560,14 +622,24 @@ def _render_markdown(report: dict[str, Any]) -> str:
 
 
 def _git_commit(project_root: Path) -> str | None:
+    if configured := os.environ.get("MRQ_CODE_VERSION"):
+        return configured
     try:
-        return subprocess.run(
+        commit = subprocess.run(
             ["git", "rev-parse", "HEAD"],
             cwd=project_root,
             capture_output=True,
             check=True,
             text=True,
         ).stdout.strip()
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=project_root,
+            capture_output=True,
+            check=True,
+            text=True,
+        ).stdout.strip()
+        return f"{commit}-dirty" if dirty else commit
     except (OSError, subprocess.CalledProcessError):
         return None
 
@@ -588,7 +660,7 @@ def main() -> int:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("reports/backtests/gld_qqq_mechanism_ablation"),
+        default=Path("reports/backtests/gld_qqq_mechanism_ablation_p0_v2"),
     )
     args = parser.parse_args()
     project_root = args.project_root.expanduser().resolve()

@@ -8,7 +8,7 @@ from mrq_research.backtest.engine import BacktestResult
 from mrq_research.backtest.metrics import summary
 
 from .models import StrategySpec
-from .runner import PortfolioRun
+from .runner import PortfolioRun, _select_common_complete_prices
 
 
 def run_cashflow_portfolio_backtest(
@@ -37,8 +37,7 @@ def run_cashflow_portfolio_backtest(
     selected = prices.loc[:, list(asset_weights)].sort_index().copy()
     if not selected.index.is_unique:
         raise ValueError("Price dates must be unique")
-    original_rows = len(selected)
-    selected = selected.dropna(how="any")
+    selected, dropped_rows = _select_common_complete_prices(selected)
     if len(selected) < 2:
         raise ValueError("Fewer than two common complete price dates are available")
     selected = selected.astype(float)
@@ -50,6 +49,11 @@ def run_cashflow_portfolio_backtest(
     weekdays = {"MON": "MON", "TUE": "TUE", "WED": "WED", "THU": "THU", "FRI": "FRI"}
     contribution_periods = index.to_period(f"W-{weekdays[plan.contribution_day]}")
     contribution_dates = set(pd.Series(index, index=index).groupby(contribution_periods).last().tolist())
+    periodic_rebalance_dates = {
+        index[position]
+        for position in range(1, len(index))
+        if _rebalance_due(index[position - 1], index[position], strategy.rebalance_frequency)
+    }
 
     rate = strategy.transaction_cost_bps / 10_000.0
     quantities = pd.Series(0.0, index=selected.columns, dtype=float)
@@ -116,6 +120,7 @@ def run_cashflow_portfolio_backtest(
             daily_gross_return = (marked_risk_value + cash - previous_equity) / previous_equity
             traded_notional = 0.0
             fees = 0.0
+            cash_available_from_prior_close = cash
 
             # Add deposits at the close. Their principal is removed from the
             # daily return below, so it cannot create artificial gains or drawdown.
@@ -145,32 +150,53 @@ def run_cashflow_portfolio_backtest(
                     )
                 pending_take_profits = []
 
-            if pending_guard is not None:
-                exposure = float(pending_guard["max_invested_weight"])
+            rebalance_due = trade_date in periodic_rebalance_dates
+            guard_due = pending_guard is not None
+            if guard_due or rebalance_due:
+                exposure = (
+                    float(pending_guard["max_invested_weight"])
+                    if guard_due
+                    else active_exposure
+                )
                 cash, gross, cost, legs = _rebalance_exposure(
                     quantities, cash, prices_at_close, asset_weights, exposure, rate
                 )
                 traded_notional += gross
                 fees += cost
                 total_trade_count += legs
-                trade_log.extend(_trade_rows(trade_date, "drawdown_control", gross, cost, legs))
-                events.append(
-                    {
-                        "event": "drawdown_control_executed",
-                        "signal_date": pending_guard["signal_date"],
-                        "execution_date": trade_date.date().isoformat(),
-                        "max_invested_weight": exposure,
-                        "gross_traded": gross,
-                        "transaction_cost": cost,
-                    }
+                trade_kind = "drawdown_control_and_rebalance" if guard_due and rebalance_due else (
+                    "drawdown_control" if guard_due else "periodic_rebalance"
                 )
+                trade_log.extend(_trade_rows(trade_date, trade_kind, gross, cost, legs))
+                if guard_due:
+                    events.append(
+                        {
+                            "event": "drawdown_control_executed",
+                            "signal_date": pending_guard["signal_date"],
+                            "execution_date": trade_date.date().isoformat(),
+                            "max_invested_weight": exposure,
+                            "gross_traded": gross,
+                            "transaction_cost": cost,
+                        }
+                    )
+                if rebalance_due:
+                    events.append(
+                        {
+                            "event": "periodic_rebalance_executed",
+                            "signal_date": index[position - 1].date().isoformat(),
+                            "execution_date": trade_date.date().isoformat(),
+                            "rebalance_frequency": strategy.rebalance_frequency,
+                            "max_invested_weight": exposure,
+                            "gross_traded": gross,
+                            "transaction_cost": cost,
+                        }
+                    )
                 pending_guard = None
 
             if plan.reinvest_cash and flow:
-                # Cash from earlier sales is redeployed on the contribution cadence,
-                # subject to the active drawdown exposure cap. New contributions are
-                # kept separate so the reinvestment effect can be measured directly.
-                prior_cash = max(0.0, cash - flow)
+                # Only cash already held at the prior close is eligible. Proceeds
+                # from a sale executed at this close wait until a later cadence.
+                prior_cash = cash_available_from_prior_close
                 equity_before_buy = float((quantities * prices_at_close).sum() + cash)
                 current_risk = float((quantities * prices_at_close).sum())
                 capacity = max(0.0, equity_before_buy * active_exposure - current_risk)
@@ -303,7 +329,7 @@ def run_cashflow_portfolio_backtest(
     interval_count = max(1, len(selected) - 1)
     time_weighted_growth = float(unit_nav.iloc[-1])
     metrics["cagr"] = time_weighted_growth ** (252.0 / interval_count) - 1.0
-    drawdowns = unit_nav / unit_nav.cummax() - 1.0
+    drawdowns = unit_nav / unit_nav.cummax().clip(lower=1.0) - 1.0
     metrics["max_drawdown"] = float(drawdowns.min())
     metrics["calmar"] = (
         float(metrics["cagr"] / abs(metrics["max_drawdown"]))
@@ -361,7 +387,7 @@ def run_cashflow_portfolio_backtest(
     return PortfolioRun(
         result=result,
         prices=selected,
-        dropped_incomplete_rows=original_rows - len(selected),
+        dropped_incomplete_rows=dropped_rows,
         signal_dates=tuple(date_value.date().isoformat() for date_value in index),
         cash_flow_details=details,
         account_equity=equity_series,
@@ -479,6 +505,18 @@ def _trade_rows(
             "asset_legs": legs,
         }
     ]
+
+
+def _rebalance_due(previous: pd.Timestamp, current: pd.Timestamp, frequency: str) -> bool:
+    if frequency == "buy_and_hold":
+        return False
+    if frequency == "monthly":
+        return previous.to_period("M") != current.to_period("M")
+    if frequency == "quarterly":
+        return previous.to_period("Q") != current.to_period("Q")
+    if frequency == "annual":
+        return previous.year != current.year
+    raise ValueError(f"Unsupported rebalance frequency: {frequency}")
 
 
 def _xirr(cash_flows: list[tuple[date, float]]) -> float | None:

@@ -24,8 +24,8 @@ def main() -> None:
     )
     result = run_portfolio_backtest(prices, strategy)
     assert result.result.returns.notna().all()
-    assert result.result.effective_weights.loc[dates[1]].sum() == 1.0
-    assert result.result.effective_weights.loc[dates[-1], "GLD"] == 0.5
+    assert result.result.ending_weights.loc[dates[1]].sum() == 1.0
+    assert result.result.ending_weights.loc[dates[-1], "GLD"] == 0.5
 
     with tempfile.TemporaryDirectory() as directory:
         record = StrategyStore(Path(directory) / "strategies").save(strategy)

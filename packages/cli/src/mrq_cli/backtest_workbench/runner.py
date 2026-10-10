@@ -26,18 +26,17 @@ def run_portfolio_backtest(prices: pd.DataFrame, strategy: StrategySpec) -> Port
         return run_cashflow_portfolio_backtest(prices, strategy)
 
     symbols = [symbol for symbol in strategy.weights if symbol != "CASH"]
+    if not symbols:
+        raise ValueError("At least one non-CASH asset is required for this backtest")
     missing = sorted(set(symbols) - set(prices.columns))
     if missing:
         raise ValueError(f"Price data is missing strategy assets: {missing}")
     selected = prices.loc[:, symbols].sort_index()
     if not selected.index.is_unique:
         raise ValueError("Price dates must be unique")
-    original_rows = len(selected)
-    selected = selected.dropna(how="any")
+    selected, dropped_rows = _select_common_complete_prices(selected)
     if len(selected) < 2:
         raise ValueError("Fewer than two common complete price dates are available")
-    if "CASH" in strategy.weights:
-        selected["CASH"] = 1.0
     selected = selected.astype(float)
     target_weights = _target_instructions(selected.index, strategy)
     backtest = run_backtest(
@@ -50,10 +49,14 @@ def run_portfolio_backtest(prices: pd.DataFrame, strategy: StrategySpec) -> Port
             allow_cash=True,
         ),
     )
+    # CASH is residual account value, never a fictitious traded instrument.
+    # Expose it in result weights so reports can verify full-account weights.
+    for frame in (backtest.effective_weights, backtest.ending_weights):
+        frame["CASH"] = (1.0 - frame.sum(axis=1)).clip(lower=0.0)
     return PortfolioRun(
         result=backtest,
         prices=selected,
-        dropped_incomplete_rows=original_rows - len(selected),
+        dropped_incomplete_rows=dropped_rows,
         signal_dates=tuple(date.date().isoformat() for date in target_weights.index),
     )
 
@@ -62,11 +65,12 @@ def _target_instructions(index: pd.Index, strategy: StrategySpec) -> pd.DataFram
     dates = pd.DatetimeIndex(index)
     if dates.empty:
         raise ValueError("No price dates are available")
-    symbols = list(strategy.weights)
+    symbols = [symbol for symbol in strategy.weights if symbol != "CASH"]
     rows: dict[pd.Timestamp, dict[str, float]] = {dates[0]: dict(strategy.weights)}
     for position in range(1, len(dates)):
         if _is_rebalance_date(dates[position - 1], dates[position], strategy.rebalance_frequency):
-            # A signal at the prior close is effective over the next close-to-close return.
+            # Signal at the prior close; the order fills at the current close,
+            # after the current close-to-close return has accrued to old holdings.
             rows[dates[position - 1]] = dict(strategy.weights)
     return pd.DataFrame.from_dict(rows, orient="index").reindex(columns=symbols).sort_index()
 
@@ -81,3 +85,33 @@ def _is_rebalance_date(previous: pd.Timestamp, current: pd.Timestamp, frequency:
     if frequency == "annual":
         return previous.year != current.year
     raise ValueError(f"Unsupported rebalance frequency: {frequency}")
+
+
+def _select_common_complete_prices(prices: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Trim different series coverage at the edges, but reject internal gaps.
+
+    Without exchange-calendar metadata an internal NaN could mean either a
+    missing quote or a legitimate market holiday. Bridging it would assign a
+    multi-session return to one observation, so require callers to provide an
+    explicitly calendar-aligned panel.
+    """
+
+    if prices.empty:
+        return prices, 0
+    bounds = [(prices[column].first_valid_index(), prices[column].last_valid_index()) for column in prices]
+    if any(start is None or end is None for start, end in bounds):
+        return prices.dropna(how="any"), len(prices) - len(prices.dropna(how="any"))
+    common_start = max(start for start, _ in bounds if start is not None)
+    common_end = min(end for _, end in bounds if end is not None)
+    if common_start > common_end:
+        return prices.iloc[0:0], len(prices)
+    common = prices.loc[(prices.index >= common_start) & (prices.index <= common_end)]
+    missing = common.index[common.isna().any(axis=1)]
+    if len(missing):
+        date = missing[0].date().isoformat()
+        assets = common.columns[common.loc[missing[0]].isna()].tolist()
+        raise ValueError(
+            "Price series contain missing observations inside their shared history "
+            f"on {date} for {assets}; refusing to bridge the gap without an explicit market calendar"
+        )
+    return common, len(prices) - len(common)
