@@ -65,6 +65,85 @@ def available_market_symbols(project_root: str | Path | None = None) -> list[dic
     return [known[key] for key in sorted(known)]
 
 
+def market_data_status(project_root: str | Path | None = None) -> dict[str, object]:
+    """Describe configured/local price availability without fetching or inventing data."""
+
+    root = _project_root(project_root)
+    catalog = load_catalog(root / "config" / "data_catalog.yaml")
+    specs_by_symbol = {spec.symbol.upper(): spec for spec in catalog.values()}
+    assets: list[dict[str, object]] = []
+    for asset in available_market_symbols(root):
+        symbol = asset["symbol"].upper()
+        local_path = _local_market_file(root, symbol)
+        if local_path is None:
+            spec = specs_by_symbol.get(symbol)
+            assets.append(
+                {
+                    **asset,
+                    "availability": "provider_configured" if spec is not None else "missing",
+                    "coverage_start": None,
+                    "coverage_end": None,
+                    "observations": None,
+                    "retrieved_at": None,
+                    "source_url": None,
+                    "price_basis": None,
+                    "content_sha256": None,
+                    "quality": "not_fetched",
+                    "note": "Provider availability is not a successful fetch; coverage is unknown until requested.",
+                }
+            )
+            continue
+        try:
+            values, basis, payload = _read_market_csv(local_path, start=None, end=None)
+            if values.empty or values.isna().any() or (values <= 0).any():
+                raise ValueError("snapshot prices must be non-empty, positive, and complete")
+            metadata = _read_price_metadata(local_path)
+            assets.append(
+                {
+                    **asset,
+                    "availability": "snapshot_available",
+                    "coverage_start": values.index.min().date().isoformat(),
+                    "coverage_end": values.index.max().date().isoformat(),
+                    "observations": int(values.size),
+                    "retrieved_at": metadata.get("retrieved_at"),
+                    "source_url": metadata.get("source_url"),
+                    "price_basis": basis,
+                    "content_sha256": hashlib.sha256(payload).hexdigest(),
+                    "quality": "schema_validated_no_fills",
+                    "point_in_time_vintage": False,
+                }
+            )
+        except (OSError, TypeError, ValueError) as exc:
+            try:
+                content_sha256 = hashlib.sha256(local_path.read_bytes()).hexdigest()
+            except OSError:
+                content_sha256 = None
+            assets.append(
+                {
+                    **asset,
+                    "availability": "invalid_snapshot",
+                    "coverage_start": None,
+                    "coverage_end": None,
+                    "observations": None,
+                    "retrieved_at": None,
+                    "source_url": None,
+                    "price_basis": None,
+                    "content_sha256": content_sha256,
+                    "quality": "failed_validation",
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+            )
+    return {
+        "checked_at": datetime.now(UTC).isoformat(),
+        "assets": assets,
+        "limitations": [
+            "Provider-configured assets have no asserted date coverage until successfully fetched.",
+            "Yahoo adjusted-price history is revised and is not a point-in-time vintage.",
+            "Missing prices are never interpolated or carried forward.",
+        ],
+    }
+
+
 def load_market_prices(
     symbols: list[str],
     start: str | None = None,

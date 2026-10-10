@@ -72,11 +72,30 @@ The default market source is the repository's configured Yahoo adapter with `aut
 
 The three external repositories `guidebee/china-stock-data`, `henrywuu91/quant-data`, and `modi-hu/stock-data` are currently source references only. No raw files from them are mirrored by this API. Check licensing, schemas, corporate-action conventions, and date coverage before importing any of their files.
 
+## Asynchronous runs for Sites/MCP
+
+Longer jobs can use the persistent run queue instead of holding open one HTTP request:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8000/backtest-runs \\
+  -H "Authorization: Bearer $MRQ_API_TOKEN" \\
+  -H "Idempotency-Key: chat-session-run-001" \\
+  -H 'Content-Type: application/json' \\
+  --data '{"strategy":{"name":"Cash SPY Gold","weights":{"CASH":0.7,"SPY":0.2,"GLD":0.1},"rebalance_frequency":"annual","initial_capital":10000,"transaction_cost_bps":5}}'
+```
+
+The `202` response includes a `run_id`. Poll `/backtest-runs/{run_id}` until it reaches `succeeded` or `failed`; on success, read `/backtests/{run_id}` for the saved report. Repeating a request with the same `Idempotency-Key` returns the same run ID. Reusing that key for a different request is rejected. `GET /data-status` distinguishes a local validated snapshot from an asset that is only configured for a provider.
+
+The queue uses SQLite and one worker thread in the API process. It recovers interrupted runs when that process restarts and the report store is persistent. It is a single-instance personal prototype, not a horizontally scaled job service; do not put it on an ephemeral serverless filesystem. A production deployment needs a persistent volume or external queue/worker and still must preserve the repository's Python backtest engine.
+
 ## API endpoints
 
 - `GET /health`: liveness check.
 - `GET /assets`: configured assets.
+- `GET /data-status`: local snapshot coverage and provider configuration; no fetch is performed.
 - `GET /strategies`, `POST /strategies`, `PUT /strategies/{id}`: list, save, and version updates to strategies.
 - `GET /strategies/{id}/versions`, `GET /strategies/{id}/versions/{version}`: retrieve immutable saved versions. `POST /backtests` accepts an optional `version` when using `strategy_id`.
 - `POST /backtests`: run an inline or saved strategy and persist a report/snapshot.
+- `POST /backtest-runs`: enqueue a run and return `202` with a stable `run_id`.
+- `GET /backtest-runs/{run_id}`: poll the asynchronous run status.
 - `GET /backtests/{run_id}`: retrieve a saved report.

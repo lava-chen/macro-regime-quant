@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import uuid
 from dataclasses import replace
@@ -25,7 +26,18 @@ def execute_backtest(
     project_root: str | Path | None = None,
     state_root: str | Path | None = None,
     strategy_version: dict[str, object] | None = None,
+    run_id: str | None = None,
 ) -> dict[str, Any]:
+    if run_id is not None:
+        if not re.fullmatch(r"bt_[a-f0-9]{24}", run_id):
+            raise ValueError("run_id must be a backtest ID returned by the asynchronous API")
+        existing_report = _state_root(state_root) / "backtests" / run_id / "report.json"
+        if existing_report.is_file():
+            existing = json.loads(existing_report.read_text("utf-8"))
+            if existing.get("strategy") != strategy.to_dict() or existing.get("strategy_version") != strategy_version:
+                raise ValueError("run_id already has a report for a different strategy request")
+            return existing
+
     symbols = [symbol for symbol in strategy.weights if symbol != "CASH"]
     prices, source_records = load_market_prices(
         symbols,
@@ -37,7 +49,7 @@ def execute_backtest(
     if len(aligned) < 2:
         raise ValueError("The selected assets do not have two common complete price dates")
 
-    run_id = f"bt_{uuid.uuid4().hex[:12]}"
+    run_id = run_id or f"bt_{uuid.uuid4().hex[:12]}"
     portfolio_run = run_portfolio_backtest(prices, strategy)
     benchmarks = _benchmark_results(portfolio_run, strategy)
     if strategy.cash_flow is not None:
