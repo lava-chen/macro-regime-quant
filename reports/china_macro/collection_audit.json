@@ -1,0 +1,272 @@
+{
+  "schema_version": "china-macro-watch-audit/1",
+  "status": "success",
+  "started_at": "2026-10-11T02:14:26+08:00",
+  "finished_at": "2026-10-11T02:34:11+08:00",
+  "as_of": "2026-10-11",
+  "scan_window": {
+    "start_year": 2005,
+    "end_year": 2026,
+    "full_rescan": true
+  },
+  "time_zone": "Asia/Shanghai",
+  "retry_and_resume": "Collectors retry failed requests; a checkpoint advances only after both official sources complete. A failed run keeps appended rows and persists its scan window for the next run; append keys make that retry idempotent.",
+  "sources": {
+    "nbs": {
+      "listing_pages_scanned": 67,
+      "candidate_articles": 342,
+      "fetch_error_count": 0,
+      "unparsed_candidate_count": 0,
+      "series": {
+        "cn_industrial_production": {
+          "rows": 55,
+          "first_observation": "2021-09-30",
+          "last_observation": "2026-08-31",
+          "confirmed_release_dates": 55,
+          "unknown_release_dates": 0
+        },
+        "cn_retail_sales": {
+          "rows": 42,
+          "first_observation": "2021-10-31",
+          "last_observation": "2026-06-30",
+          "confirmed_release_dates": 42,
+          "unknown_release_dates": 0
+        },
+        "cn_retail_sales_ytd": {
+          "rows": 12,
+          "first_observation": "2022-02-28",
+          "last_observation": "2026-08-31",
+          "confirmed_release_dates": 12,
+          "unknown_release_dates": 0
+        },
+        "cn_fixed_asset_investment": {
+          "rows": 55,
+          "first_observation": "2021-09-30",
+          "last_observation": "2026-08-31",
+          "confirmed_release_dates": 55,
+          "unknown_release_dates": 0
+        },
+        "cn_cpi": {
+          "rows": 59,
+          "first_observation": "2021-10-31",
+          "last_observation": "2026-08-31",
+          "confirmed_release_dates": 59,
+          "unknown_release_dates": 0
+        },
+        "cn_core_cpi": {
+          "rows": 0,
+          "first_observation": null,
+          "last_observation": null,
+          "confirmed_release_dates": 0,
+          "unknown_release_dates": 0
+        },
+        "cn_ppi": {
+          "rows": 59,
+          "first_observation": "2021-10-31",
+          "last_observation": "2026-08-31",
+          "confirmed_release_dates": 59,
+          "unknown_release_dates": 0
+        },
+        "cn_pmi_new_orders": {
+          "rows": 60,
+          "first_observation": "2021-10-31",
+          "last_observation": "2026-09-30",
+          "confirmed_release_dates": 60,
+          "unknown_release_dates": 0
+        }
+      },
+      "downloaded_at": "2026-10-11T02:31:48+08:00"
+    },
+    "pboc": {
+      "listing_pages_scanned": 38,
+      "candidate_articles": 320,
+      "fetch_error_count": 0,
+      "unparsed_candidate_count": 0,
+      "series": {
+        "cn_m1": {
+          "rows": 201,
+          "first_observation": "2009-11-30",
+          "last_observation": "2026-08-31",
+          "confirmed_release_dates": 201,
+          "unknown_release_dates": 0
+        },
+        "cn_m2": {
+          "rows": 201,
+          "first_observation": "2009-11-30",
+          "last_observation": "2026-08-31",
+          "confirmed_release_dates": 201,
+          "unknown_release_dates": 0
+        },
+        "cn_tsf_stock_yoy": {
+          "rows": 119,
+          "first_observation": "2014-12-31",
+          "last_observation": "2025-08-31",
+          "confirmed_release_dates": 119,
+          "unknown_release_dates": 0
+        }
+      },
+      "downloaded_at": "2026-10-11T02:34:11+08:00"
+    }
+  },
+  "errors": [],
+  "new_rows_appended": 2,
+  "events": [
+    {
+      "event": "provenance_update",
+      "series_id": "cn_m1",
+      "observation_period": "2011-05",
+      "old_value": 12.7,
+      "new_value": 12.7,
+      "old_vintage": "2011-06-13",
+      "new_vintage": "2026-10-11"
+    },
+    {
+      "event": "provenance_update",
+      "series_id": "cn_m2",
+      "observation_period": "2011-05",
+      "old_value": 15.1,
+      "new_value": 15.1,
+      "old_vintage": "2011-06-13",
+      "new_vintage": "2026-10-11"
+    }
+  ],
+  "quality": {
+    "new_releases": [],
+    "historical_revisions": [],
+    "provenance_updates": [
+      {
+        "event": "provenance_update",
+        "series_id": "cn_m1",
+        "observation_period": "2011-05",
+        "old_value": 12.7,
+        "new_value": 12.7,
+        "old_vintage": "2011-06-13",
+        "new_vintage": "2026-10-11"
+      },
+      {
+        "event": "provenance_update",
+        "series_id": "cn_m2",
+        "observation_period": "2011-05",
+        "old_value": 15.1,
+        "new_value": 15.1,
+        "old_vintage": "2011-06-13",
+        "new_vintage": "2026-10-11"
+      }
+    ],
+    "stale_series": [
+      {
+        "series_id": "cn_retail_sales",
+        "latest_period": "2026-06",
+        "age_days": 88
+      },
+      {
+        "series_id": "cn_tsf_stock_yoy",
+        "latest_period": "2025-08",
+        "age_days": 394
+      }
+    ],
+    "missing_periods": [
+      {
+        "series_id": "cn_m1",
+        "missing_periods": [
+          "2025-01"
+        ],
+        "truncated": false,
+        "classification": "unobserved_period; no interpolation applied"
+      },
+      {
+        "series_id": "cn_m2",
+        "missing_periods": [
+          "2025-01"
+        ],
+        "truncated": false,
+        "classification": "unobserved_period; no interpolation applied"
+      },
+      {
+        "series_id": "cn_retail_sales",
+        "missing_periods": [
+          "2022-01",
+          "2022-02",
+          "2022-04",
+          "2022-05",
+          "2023-01",
+          "2023-02",
+          "2024-01",
+          "2024-02",
+          "2024-06",
+          "2025-01",
+          "2025-02",
+          "2026-01",
+          "2026-02",
+          "2026-04",
+          "2026-05"
+        ],
+        "truncated": false,
+        "classification": "unobserved_period; no interpolation applied"
+      },
+      {
+        "series_id": "cn_retail_sales_ytd",
+        "missing_periods": [
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-03",
+          "2023-04",
+          "2023-05",
+          "2023-06",
+          "2023-07",
+          "2023-08",
+          "2023-09",
+          "2023-10",
+          "2023-11",
+          "2023-12",
+          "2024-07",
+          "2024-08",
+          "2024-09",
+          "2024-10",
+          "2024-11",
+          "2024-12",
+          "2025-03",
+          "2025-04",
+          "2025-05",
+          "2025-06",
+          "2025-07",
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11",
+          "2025-12"
+        ],
+        "truncated": false,
+        "classification": "unobserved_period; no interpolation applied"
+      },
+      {
+        "series_id": "cn_tsf_stock_yoy",
+        "missing_periods": [
+          "2015-01",
+          "2015-02",
+          "2015-04",
+          "2015-05",
+          "2015-07",
+          "2015-08",
+          "2015-10",
+          "2015-11",
+          "2016-02",
+          "2025-01"
+        ],
+        "truncated": false,
+        "classification": "unobserved_period; no interpolation applied"
+      }
+    ],
+    "unusual_publication_lags": [],
+    "large_changes_for_review": [],
+    "methodology_change_reviews": [],
+    "unknown_release_dates": 0
+  },
+  "ledger": "data/raw/china/china_macro_snapshots.csv",
+  "ledger_rows": 865
+}

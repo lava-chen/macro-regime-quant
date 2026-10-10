@@ -1,8 +1,8 @@
 {
   "schema_version": "china-macro-watch-report/1",
-  "as_of": "2026-10-09",
-  "generated_at": "2026-10-09T10:33:10+08:00",
-  "data_updated_at": "2026-10-07T17:11:40+08:00",
+  "as_of": "2026-10-11",
+  "generated_at": "2026-10-11T02:34:12+08:00",
+  "data_updated_at": "2026-10-11T02:34:11+08:00",
   "classification": {
     "observed_data": "Official reported values and evidenced publication dates.",
     "model_inference": "Past-only standardized factors and the Growth/Inflation quadrant label.",
@@ -297,17 +297,36 @@
   "quality": {
     "new_releases": [],
     "historical_revisions": [],
-    "provenance_updates": [],
+    "provenance_updates": [
+      {
+        "event": "provenance_update",
+        "series_id": "cn_m1",
+        "observation_period": "2011-05",
+        "old_value": 12.7,
+        "new_value": 12.7,
+        "old_vintage": "2011-06-13",
+        "new_vintage": "2026-10-11"
+      },
+      {
+        "event": "provenance_update",
+        "series_id": "cn_m2",
+        "observation_period": "2011-05",
+        "old_value": 15.1,
+        "new_value": 15.1,
+        "old_vintage": "2011-06-13",
+        "new_vintage": "2026-10-11"
+      }
+    ],
     "stale_series": [
       {
         "series_id": "cn_retail_sales",
         "latest_period": "2026-06",
-        "age_days": 86
+        "age_days": 88
       },
       {
         "series_id": "cn_tsf_stock_yoy",
         "latest_period": "2025-08",
-        "age_days": 392
+        "age_days": 394
       }
     ],
     "missing_periods": [
@@ -413,10 +432,10 @@
     "unknown_release_dates": 0
   },
   "collection": {
-    "status": "not_run",
-    "last_attempt_at": null,
+    "status": "success",
+    "last_attempt_at": "2026-10-11T02:34:11+08:00",
     "errors": [],
-    "new_rows_appended": 0
+    "new_rows_appended": 2
   },
   "not_collected": [
     {

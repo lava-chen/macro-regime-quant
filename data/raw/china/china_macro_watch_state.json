@@ -1,0 +1,12 @@
+{
+  "schema_version": "china-macro-watch-state/1",
+  "last_successful_at": "2026-10-11T02:34:11+08:00",
+  "successful_runs": 1,
+  "last_scan_window": {
+    "start_year": 2005,
+    "end_year": 2026,
+    "full_rescan": true
+  },
+  "last_full_scan_at": "2026-10-11T02:34:11+08:00",
+  "resume_policy": "repeat failed scan window; existing snapshots remain immutable"
+}
