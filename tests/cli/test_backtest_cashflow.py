@@ -14,6 +14,7 @@ def test_cash_flow_strategy_serializes_and_validates_ordered_rules():
         "cash_flow": {
             "weekly_contribution_amount": 50,
             "contribution_day": "FRI",
+            "reinvest_cash": True,
             "take_profit_tiers": [
                 {"return_threshold": 0.2, "sell_fraction": 0.1},
                 {"return_threshold": 0.35, "sell_fraction": 0.15},
@@ -36,6 +37,64 @@ def test_cash_flow_strategy_serializes_and_validates_ordered_rules():
                 },
             }
         )
+
+
+def test_idle_cash_reinvests_on_next_weekly_deposit_date():
+    dates = pd.to_datetime(
+        [
+            "2025-01-06",
+            "2025-01-07",
+            "2025-01-08",
+            "2025-01-09",
+            "2025-01-10",
+            "2025-01-13",
+            "2025-01-14",
+            "2025-01-15",
+            "2025-01-16",
+            "2025-01-17",
+        ]
+    )
+    prices = pd.DataFrame(
+        {"GLD": [100, 100, 120, 120, 120, 132, 132, 132, 132, 132]},
+        index=dates,
+    )
+    base = {
+        "name": "Cash redeployment test",
+        "weights": {"GLD": 1.0},
+        "start_date": "2025-01-06",
+        "end_date": "2025-01-17",
+        "initial_capital": 1000,
+        "transaction_cost_bps": 0,
+    }
+    rules = ({"return_threshold": 0.15, "sell_fraction": 0.25},)
+    held = StrategySpec(
+        **base,
+        cash_flow=CashFlowPlan(weekly_contribution_amount=10, take_profit_tiers=rules),
+    )
+    reinvested = StrategySpec(
+        **base,
+        cash_flow=CashFlowPlan(
+            weekly_contribution_amount=10,
+            take_profit_tiers=rules,
+            reinvest_cash=True,
+        ),
+    )
+
+    held_run = run_portfolio_backtest(prices, held)
+    reinvested_run = run_portfolio_backtest(prices, reinvested)
+
+    assert held_run.cash_flow_details["ending_cash"] == pytest.approx(300)
+    assert reinvested_run.cash_flow_details["ending_cash"] == pytest.approx(0)
+    assert reinvested_run.account_equity.iloc[-1] > held_run.account_equity.iloc[-1]
+    assert any(
+        event["event"] == "cash_reinvestment_executed"
+        and event["execution_date"] == "2025-01-10"
+        for event in reinvested_run.cash_flow_details["events"]
+    )
+    assert any(
+        trade["kind"] == "cash_reinvestment" and trade["date"] == "2025-01-10"
+        for trade in reinvested_run.cash_flow_details["trades"]
+    )
 
 
 def test_weekly_cash_flows_are_excluded_from_time_weighted_return():

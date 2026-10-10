@@ -37,13 +37,15 @@ net_t = gross_t - cost_t
 
 Sparse target instructions are shifted by the execution lag. A forward-filled target is not interpreted as a daily trade. After each period return, invested weights drift by asset performance. If weights sum below one, the remainder is zero-return cash. Portfolio metrics use daily data, 252 trading periods per year, and a 0% risk-free rate for Sharpe.
 
-The workbench supports long-only target weights with `buy_and_hold`, monthly, quarterly, or annual rebalancing. An optional `CashFlowPlan` adds a weekly contribution, one-time cumulative-TWR take-profit tiers, and peak-to-trough drawdown exposure caps. Each close-derived take-profit or drawdown signal executes at the next available close. Weekly deposits use the last available session in the selected week and are excluded from time-weighted returns and drawdown; XIRR uses all deposits and ending account value. Profit-taking proceeds remain in zero-yield cash unless a drawdown recovery rebalances exposure back to target. Drawdown caps reduce exposure but cannot guarantee a maximum loss. Taxes, cash yield, market impact, short positions, and margin remain outside scope.
+The workbench supports long-only target weights with `buy_and_hold`, monthly, quarterly, or annual rebalancing. An optional `CashFlowPlan` adds a weekly contribution, one-time cumulative-TWR take-profit tiers, peak-to-trough drawdown exposure caps, and optional cash reinvestment. Each close-derived take-profit or drawdown signal executes at the next available close. Weekly deposits use the last available session in the selected week and are excluded from time-weighted returns and drawdown; XIRR uses all deposits and ending account value. By default, sale proceeds remain in zero-yield cash. With `reinvest_cash=true`, idle cash from earlier sales is redeployed on the next selected weekly contribution date, subject to the active drawdown exposure cap; newly scheduled contributions are counted separately. Drawdown caps reduce exposure but cannot guarantee a maximum loss. Taxes, cash yield, market impact, short positions, and margin remain outside scope.
 
 Example risk plan for a 50/50 GLD/QQQ strategy: contribute USD 50 weekly, take 10%, 15%, and 20% of then-current risk holdings when cumulative time-weighted return first reaches 20%, 35%, and 50%, respectively; cap risky exposure at 50% after a 15% drawdown and 25% after a 25% drawdown. Both take-profit and drawdown rules are configurable and are assumptions, not recommended defaults.
 
 ## Reproducibility and caveats
 
 Each run stores the strategy definition, requested/actual dates, provider, price basis, retrieval timestamp, source hashes, aligned input-price SHA-256, code version, assumptions, metrics, monthly/annual returns, and drawdown. The exact input price snapshot and JSON/Markdown reports are retained under the configured local state directory.
+
+The standalone GLD/QQQ mechanism ablation and its independent reproduction instructions are documented in [backtest_ablation.md](backtest_ablation.md).
 
 Yahoo auto-adjusted history has no point-in-time vintage. A stored snapshot reproduces the run, but does not prove what adjusted-price values were historically visible at each past date. Use a licensed, point-in-time price source for historical signal research that depends on price revisions or corporate actions.
 

@@ -46,6 +46,7 @@ class CashFlowPlan:
 
     weekly_contribution_amount: float
     contribution_day: ContributionDay = "FRI"
+    reinvest_cash: bool = False
     take_profit_tiers: tuple[TakeProfitTier, ...] = ()
     drawdown_rules: tuple[DrawdownRule, ...] = ()
 
@@ -56,6 +57,8 @@ class CashFlowPlan:
         day = str(self.contribution_day).upper()
         if day not in {"MON", "TUE", "WED", "THU", "FRI"}:
             raise ValueError("contribution_day must be a US trading weekday from MON to FRI")
+        if not isinstance(self.reinvest_cash, bool):
+            raise TypeError("reinvest_cash must be a boolean")
         tiers = tuple(_take_profit_tier(value) for value in self.take_profit_tiers)
         if any(a.return_threshold >= b.return_threshold for a, b in pairwise(tiers)):
             raise ValueError("take-profit tiers must be ordered by increasing return_threshold")
@@ -66,14 +69,19 @@ class CashFlowPlan:
             raise ValueError("deeper drawdown rules must reduce max_invested_weight")
         object.__setattr__(self, "weekly_contribution_amount", amount)
         object.__setattr__(self, "contribution_day", day)
+        object.__setattr__(self, "reinvest_cash", self.reinvest_cash)
         object.__setattr__(self, "take_profit_tiers", tiers)
         object.__setattr__(self, "drawdown_rules", rules)
 
     @classmethod
     def from_dict(cls, value: dict[str, object]) -> CashFlowPlan:
+        reinvest_cash = value.get("reinvest_cash", False)
+        if not isinstance(reinvest_cash, bool):
+            raise TypeError("reinvest_cash must be a boolean")
         return cls(
             weekly_contribution_amount=float(value["weekly_contribution_amount"]),
             contribution_day=str(value.get("contribution_day", "FRI")),  # type: ignore[arg-type]
+            reinvest_cash=reinvest_cash,
             take_profit_tiers=tuple(
                 _take_profit_tier(row) for row in value.get("take_profit_tiers", [])  # type: ignore[arg-type]
             ),

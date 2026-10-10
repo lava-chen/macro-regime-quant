@@ -166,6 +166,34 @@ def run_cashflow_portfolio_backtest(
                 )
                 pending_guard = None
 
+            if plan.reinvest_cash and flow:
+                # Cash from earlier sales is redeployed on the contribution cadence,
+                # subject to the active drawdown exposure cap. New contributions are
+                # kept separate so the reinvestment effect can be measured directly.
+                prior_cash = max(0.0, cash - flow)
+                equity_before_buy = float((quantities * prices_at_close).sum() + cash)
+                current_risk = float((quantities * prices_at_close).sum())
+                capacity = max(0.0, equity_before_buy * active_exposure - current_risk)
+                budget = min(prior_cash, capacity)
+                gross, cost, legs = _buy_budget(
+                    quantities, cash, prices_at_close, budget, asset_weights, rate
+                )
+                cash -= gross + cost
+                traded_notional += gross
+                fees += cost
+                total_trade_count += legs
+                trade_log.extend(_trade_rows(trade_date, "cash_reinvestment", gross, cost, legs))
+                if gross > 0:
+                    events.append(
+                        {
+                            "event": "cash_reinvestment_executed",
+                            "execution_date": trade_date.date().isoformat(),
+                            "gross_invested": gross,
+                            "transaction_cost": cost,
+                            "max_invested_weight": active_exposure,
+                        }
+                    )
+
             if flow:
                 equity_before_buy = float((quantities * prices_at_close).sum() + cash)
                 current_risk = float((quantities * prices_at_close).sum())
@@ -181,9 +209,14 @@ def run_cashflow_portfolio_backtest(
                 trade_log.extend(_trade_rows(trade_date, "weekly_contribution", gross, cost, legs))
 
         current_risk_value = float((quantities * prices_at_close).sum())
+        if cash < -1e-6:
+            raise ValueError("Cash-flow accounting produced negative cash")
+        # Fees and proportional rebalances may leave a tiny negative IEEE-754
+        # residue. Clamp only that sub-cent numerical noise before marking equity.
+        cash = max(0.0, cash)
         equity = current_risk_value + cash
-        if cash < -1e-6 or equity <= 0:
-            raise ValueError("Cash-flow accounting produced negative cash or non-positive equity")
+        if equity <= 0:
+            raise ValueError("Cash-flow accounting produced non-positive equity")
         if position == 0:
             daily_return = (equity - flow) / flow
             unit_nav.iloc[position] = 1.0 + daily_return
@@ -288,6 +321,13 @@ def run_cashflow_portfolio_backtest(
     details: dict[str, object] = {
         "weekly_contribution_amount": plan.weekly_contribution_amount,
         "contribution_day": plan.contribution_day,
+        "reinvest_cash": plan.reinvest_cash,
+        "cash_reinvestment_rule": (
+            "Redeploy previously idle cash on the next selected weekly contribution date, "
+            "subject to the active max invested weight."
+            if plan.reinvest_cash
+            else "Hold sale proceeds and other idle cash without reinvestment."
+        ),
         "contribution_count": len(contribution_dates),
         "total_contributions": total_contributions,
         "ending_cash": float(cash_series.iloc[-1]),

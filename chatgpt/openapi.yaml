@@ -160,6 +160,10 @@ components:
               enum: [MON, TUE, WED, THU, FRI]
               default: FRI
               description: Use the last available market close in each week ending on this weekday.
+            reinvest_cash:
+              type: boolean
+              default: false
+              description: Redeploy earlier idle cash on the next weekly contribution date, subject to the active drawdown exposure cap.
             take_profit_tiers:
               type: array
               description: One-time triggers on cumulative time-weighted return; sell fractions of then-current risk holdings at the next available close.

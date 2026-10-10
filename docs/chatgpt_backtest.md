@@ -41,13 +41,14 @@ Example:
 }
 ```
 
-An optional `cash_flow` plan adds a weekly deposit, cumulative time-weighted-return take-profit tiers, and peak-to-trough drawdown exposure caps. For example, `return_threshold: 0.20` is a one-time 20% TWR trigger; `sell_fraction: 0.10` sells 10% of risk holdings at the next available close. A `trigger_drawdown: 0.15` rule with `max_invested_weight: 0.50` caps risk assets at 50% of account equity after the next-close execution. Deposits are excluded from TWR and drawdown; the report includes XIRR, all contributions, paid fees, cash balance, trade/event logs, and a same-cash-flow DCA-only benchmark. A drawdown cap reduces exposure but cannot guarantee a maximum loss.
+An optional `cash_flow` plan adds a weekly deposit, cumulative time-weighted-return take-profit tiers, peak-to-trough drawdown exposure caps, and optional cash reinvestment. With `reinvest_cash: true`, idle proceeds from earlier sales are redeployed on the next selected weekly contribution date, subject to the current invested-weight cap; the new weekly deposit is accounted for separately. For example, `return_threshold: 0.20` is a one-time 20% TWR trigger; `sell_fraction: 0.10` sells 10% of risk holdings at the next available close. A `trigger_drawdown: 0.15` rule with `max_invested_weight: 0.50` caps risk assets at 50% of account equity after the next-close execution. Deposits are excluded from TWR and drawdown; the report includes XIRR, all contributions, paid fees, cash balance, trade/event logs, and a same-cash-flow DCA-only benchmark. A drawdown cap reduces exposure but cannot guarantee a maximum loss.
 
 ```json
 {
   "cash_flow": {
     "weekly_contribution_amount": 50,
     "contribution_day": "FRI",
+    "reinvest_cash": false,
     "take_profit_tiers": [
       {"return_threshold": 0.20, "sell_fraction": 0.10},
       {"return_threshold": 0.35, "sell_fraction": 0.15},
@@ -60,6 +61,8 @@ An optional `cash_flow` plan adds a weekly deposit, cumulative time-weighted-ret
   }
 }
 ```
+
+For a reproducible 2×2×2 GLD/QQQ ablation that isolates take-profit, drawdown limits, and cash redeployment, see [backtest_ablation.md](backtest_ablation.md).
 
 ## Data and interpretation
 
