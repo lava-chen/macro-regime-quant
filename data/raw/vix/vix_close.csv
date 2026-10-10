@@ -9289,3 +9289,4 @@ observation_date,value,available_date,availability_basis
 2026-10-06,15.010000,2026-10-07,fixed_lag
 2026-10-07,15.080000,2026-10-08,fixed_lag
 2026-10-08,15.410000,2026-10-09,fixed_lag
+2026-10-09,14.840000,2026-10-10,fixed_lag
