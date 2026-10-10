@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import hmac
 import json
 import os
@@ -30,6 +31,20 @@ class BacktestRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(200, {"assets": available_market_symbols()})
             elif path == "/strategies":
                 self._send_json(200, {"strategies": [row.to_dict() for row in StrategyStore().list()]})
+            elif path.startswith("/strategies/"):
+                parts = path.strip("/").split("/")
+                if len(parts) == 3 and parts[2] == "versions":
+                    self._send_json(
+                        200,
+                        {"versions": [row.to_dict() for row in StrategyStore().list_versions(parts[1])]},
+                    )
+                elif len(parts) == 4 and parts[2] == "versions":
+                    self._send_json(
+                        200,
+                        StrategyStore().get_version(parts[1], int(parts[3])).to_dict(),
+                    )
+                else:
+                    self._send_error_json(404, "Unknown endpoint")
             elif path.startswith("/backtests/"):
                 run_id = path.removeprefix("/backtests/")
                 self._send_json(200, read_backtest_report(run_id))
@@ -87,8 +102,22 @@ class BacktestRequestHandler(BaseHTTPRequestHandler):
         inline_strategy = payload.get("strategy")
         if bool(strategy_id) == bool(inline_strategy):
             raise ValueError("Provide exactly one of strategy_id or strategy")
+        strategy_version = None
         if strategy_id:
-            strategy = StrategyStore().get(str(strategy_id)).spec
+            store = StrategyStore()
+            requested_version = payload.get("version")
+            record = (
+                store.get_version(str(strategy_id), int(requested_version))
+                if requested_version is not None
+                else store.get(str(strategy_id))
+            )
+            strategy = record.spec
+            canonical = json.dumps(record.spec.to_dict(), sort_keys=True, separators=(",", ":"))
+            strategy_version = {
+                "strategy_id": record.strategy_id,
+                "version": record.version,
+                "spec_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+            }
         elif isinstance(inline_strategy, dict):
             strategy = StrategySpec.from_dict(inline_strategy)
         else:
@@ -97,6 +126,7 @@ class BacktestRequestHandler(BaseHTTPRequestHandler):
             strategy,
             project_root=os.environ.get("MRQ_PROJECT_ROOT"),
             state_root=os.environ.get("MRQ_STATE_DIR"),
+            strategy_version=strategy_version,
         )
         self._send_json(200, report)
 

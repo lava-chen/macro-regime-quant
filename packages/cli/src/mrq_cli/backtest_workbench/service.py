@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
 import uuid
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -23,6 +24,7 @@ def execute_backtest(
     *,
     project_root: str | Path | None = None,
     state_root: str | Path | None = None,
+    strategy_version: dict[str, object] | None = None,
 ) -> dict[str, Any]:
     symbols = [symbol for symbol in strategy.weights if symbol != "CASH"]
     prices, source_records = load_market_prices(
@@ -73,6 +75,8 @@ def execute_backtest(
         generated_at=generated_at,
         code_version=_code_version(),
     )
+    if strategy_version is not None:
+        report["strategy_version"] = strategy_version
     report["data"]["aligned_start"] = portfolio_run.prices.index.min().date().isoformat()
     report["data"]["aligned_end"] = portfolio_run.prices.index.max().date().isoformat()
     report["data"]["snapshot_file"] = "price_snapshot.csv"
@@ -160,6 +164,28 @@ def _state_root(value: str | Path | None) -> Path:
 
 
 def _code_version() -> str:
+    configured = os.environ.get("MRQ_CODE_VERSION")
+    if configured:
+        return configured
+    repository_root = Path(__file__).resolve().parents[5]
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "--short=12", "HEAD"],
+            cwd=repository_root,
+            capture_output=True,
+            check=True,
+            text=True,
+        ).stdout.strip()
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=repository_root,
+            capture_output=True,
+            check=True,
+            text=True,
+        ).stdout.strip()
+        return f"{commit}-dirty" if dirty else commit
+    except (OSError, subprocess.CalledProcessError):
+        pass
     try:
         return version("macro-regime-quant")
     except PackageNotFoundError:

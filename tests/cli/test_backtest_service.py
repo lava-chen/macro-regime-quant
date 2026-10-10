@@ -6,6 +6,12 @@ from mrq_cli.backtest_workbench.models import StrategySpec
 from mrq_cli.backtest_workbench.prices import PriceSource
 
 
+def test_service_uses_build_sha_for_report_provenance(monkeypatch):
+    monkeypatch.setenv("MRQ_CODE_VERSION", "build-commit-abc123")
+
+    assert service._code_version() == "build-commit-abc123"
+
+
 def test_service_persists_input_snapshot_report_and_markdown(tmp_path, monkeypatch):
     dates = pd.date_range("2020-01-01", periods=5, freq="B")
     prices = pd.DataFrame(

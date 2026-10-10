@@ -1,7 +1,9 @@
 import json
+from datetime import date, timedelta
 
 import pandas as pd
 import pytest
+from mrq_cli.backtest_workbench.cashflow import _xirr
 from mrq_cli.backtest_workbench.models import CashFlowPlan, StrategySpec
 from mrq_cli.backtest_workbench.report import build_backtest_report
 from mrq_cli.backtest_workbench.runner import run_portfolio_backtest
@@ -97,6 +99,46 @@ def test_idle_cash_reinvests_on_next_weekly_deposit_date():
     )
 
 
+def test_sale_proceeds_wait_until_a_later_contribution_date_to_reinvest():
+    dates = pd.to_datetime(
+        [
+            "2025-01-06",
+            "2025-01-07",
+            "2025-01-08",
+            "2025-01-09",
+            "2025-01-10",
+            "2025-01-13",
+            "2025-01-14",
+            "2025-01-15",
+            "2025-01-16",
+            "2025-01-17",
+        ]
+    )
+    prices = pd.DataFrame(
+        {"GLD": [100, 100, 100, 120, 125, 125, 125, 125, 125, 125]}, index=dates
+    )
+    strategy = StrategySpec(
+        name="No same-close sale reinvestment",
+        weights={"GLD": 1.0},
+        initial_capital=1000,
+        transaction_cost_bps=0,
+        cash_flow=CashFlowPlan(
+            weekly_contribution_amount=10,
+            reinvest_cash=True,
+            take_profit_tiers=({"return_threshold": 0.15, "sell_fraction": 0.25},),
+        ),
+    )
+
+    run = run_portfolio_backtest(prices, strategy)
+
+    reinvestments = [
+        event
+        for event in run.cash_flow_details["events"]
+        if event["event"] == "cash_reinvestment_executed"
+    ]
+    assert [event["execution_date"] for event in reinvestments] == ["2025-01-17"]
+
+
 def test_weekly_cash_flows_are_excluded_from_time_weighted_return():
     dates = pd.to_datetime(
         [
@@ -132,6 +174,35 @@ def test_weekly_cash_flows_are_excluded_from_time_weighted_return():
     assert result.unit_nav.iloc[-1] == pytest.approx(1.21)
     assert result.result.metrics["max_drawdown"] == pytest.approx(0)
     assert result.cash_flow_details["xirr"] > 0
+
+
+def test_external_flow_equity_identity_and_initial_fee_drawdown():
+    dates = pd.to_datetime(["2025-01-06", "2025-01-07"])
+    prices = pd.DataFrame({"GLD": [100.0, 100.0]}, index=dates)
+    strategy = StrategySpec(
+        name="Cash flow ledger identity",
+        weights={"GLD": 1.0},
+        initial_capital=100,
+        transaction_cost_bps=100,
+        cash_flow=CashFlowPlan(weekly_contribution_amount=10),
+    )
+
+    run = run_portfolio_backtest(prices, strategy)
+
+    prior_equity = run.account_equity.iloc[0]
+    day_one_flow = run.cash_flow_details["weekly_contribution_amount"]
+    assert run.account_equity.iloc[1] == pytest.approx(
+        prior_equity * (1.0 + run.result.returns.iloc[1]) + day_one_flow
+    )
+    assert run.result.metrics["max_drawdown"] == pytest.approx(run.unit_nav.min() - 1.0)
+    assert run.result.metrics["max_drawdown"] < 0
+
+
+def test_xirr_matches_a_hand_calculated_four_year_cashflow():
+    start = date(2020, 1, 1)
+    end = start + timedelta(days=1461)
+
+    assert _xirr([(start, -100.0), (end, 146.41)]) == pytest.approx(0.10, abs=1e-10)
 
 
 def test_take_profit_threshold_triggers_once_and_executes_next_session():
@@ -214,3 +285,55 @@ def test_transaction_costs_and_report_capture_external_flows():
     assert report["metrics"]["total_contributions"] == 1010
     assert report["drawdown"]["basis"] == "unitized NAV excluding external contributions"
     assert report["cash_flow"]["contribution_count"] == 1
+
+
+def test_cashflow_strategy_executes_monthly_rebalance_after_month_boundary():
+    dates = pd.to_datetime(["2025-01-30", "2025-01-31", "2025-02-03", "2025-02-04"])
+    prices = pd.DataFrame(
+        {"GLD": [100.0, 200.0, 200.0, 200.0], "QQQ": [100.0, 100.0, 100.0, 100.0]},
+        index=dates,
+    )
+    strategy = StrategySpec(
+        name="DCA with monthly rebalance",
+        weights={"GLD": 0.5, "QQQ": 0.5},
+        rebalance_frequency="monthly",
+        initial_capital=1000,
+        transaction_cost_bps=0,
+        cash_flow=CashFlowPlan(weekly_contribution_amount=1),
+    )
+
+    run = run_portfolio_backtest(prices, strategy)
+
+    executions = [
+        event for event in run.cash_flow_details["events"] if event["event"] == "periodic_rebalance_executed"
+    ]
+    assert [event["execution_date"] for event in executions] == ["2025-02-03"]
+    assert run.result.ending_weights.loc[dates[2], "GLD"] == pytest.approx(0.5)
+    assert run.result.ending_weights.loc[dates[2], "QQQ"] == pytest.approx(0.5)
+
+
+def test_cashflow_strategy_executes_annual_rebalance_after_year_boundary():
+    dates = pd.to_datetime(
+        ["2025-01-02", "2025-01-03", "2025-12-31", "2026-01-02", "2026-01-05"]
+    )
+    prices = pd.DataFrame(
+        {"GLD": [100.0, 100.0, 200.0, 200.0, 200.0], "QQQ": [100.0] * 5},
+        index=dates,
+    )
+    strategy = StrategySpec(
+        name="DCA with annual rebalance",
+        weights={"GLD": 0.5, "QQQ": 0.5},
+        rebalance_frequency="annual",
+        initial_capital=1000,
+        transaction_cost_bps=0,
+        cash_flow=CashFlowPlan(weekly_contribution_amount=1),
+    )
+
+    run = run_portfolio_backtest(prices, strategy)
+
+    executions = [
+        event for event in run.cash_flow_details["events"] if event["event"] == "periodic_rebalance_executed"
+    ]
+    assert [event["execution_date"] for event in executions] == ["2026-01-02"]
+    assert run.result.ending_weights.loc[dates[3], "GLD"] == pytest.approx(0.5)
+    assert run.result.ending_weights.loc[dates[3], "QQQ"] == pytest.approx(0.5)

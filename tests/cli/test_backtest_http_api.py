@@ -105,6 +105,9 @@ def test_http_end_to_end_strategy_save_run_and_report_retrieval(tmp_path, monkey
         assert report["benchmarks"]["weekly_dca_without_controls"]["total_contributions"] == 1040
         assert report["data"]["price_snapshot_sha256"]
         assert report["benchmarks"]["same_weights_buy_and_hold"]
+        assert report["strategy_version"]["strategy_id"] == saved["strategy_id"]
+        assert report["strategy_version"]["version"] == 1
+        assert len(report["strategy_version"]["spec_sha256"]) == 64
 
         restored_status, restored = _request(
             base,
@@ -118,6 +121,46 @@ def test_http_end_to_end_strategy_save_run_and_report_retrieval(tmp_path, monkey
         assert (run_dir / "price_snapshot.csv").is_file()
         assert (run_dir / "report.md").is_file()
         assert (run_dir / "report.json").is_file()
+
+        revised_strategy = {
+            **strategy,
+            "weights": {"GLD": 0.6, "QQQ": 0.4},
+        }
+        updated_status, updated = _request(
+            base,
+            "PUT",
+            f"/strategies/{saved['strategy_id']}",
+            body=revised_strategy,
+            token="smoke-secret",
+        )
+        assert updated_status == 200
+        assert updated["version"] == 2
+        versions_status, versions = _request(
+            base,
+            "GET",
+            f"/strategies/{saved['strategy_id']}/versions",
+            token="smoke-secret",
+        )
+        assert versions_status == 200
+        assert [row["version"] for row in versions["versions"]] == [1, 2]
+        old_version_status, old_version = _request(
+            base,
+            "GET",
+            f"/strategies/{saved['strategy_id']}/versions/1",
+            token="smoke-secret",
+        )
+        assert old_version_status == 200
+        assert old_version["strategy"]["weights"] == {"GLD": 0.5, "QQQ": 0.5}
+        old_run_status, old_run = _request(
+            base,
+            "POST",
+            "/backtests",
+            body={"strategy_id": saved["strategy_id"], "version": 1},
+            token="smoke-secret",
+        )
+        assert old_run_status == 200
+        assert old_run["strategy_version"]["version"] == 1
+        assert old_run["strategy"]["weights"] == {"GLD": 0.5, "QQQ": 0.5}
 
         invalid = {"strategy": {**strategy, "weights": {"GLD": 0.7, "QQQ": 0.5}}}
         assert _request(base, "POST", "/backtests", body=invalid, token="smoke-secret")[0] == 422
