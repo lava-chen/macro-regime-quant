@@ -14,9 +14,9 @@ The production backend will not use a persistent Python HTTP server. Keep the ex
 |---|---|
 | Private Site v8 and plugin | Published and installed |
 | Eight MCP tools | Available; backend URL/token not configured |
-| Supabase project for this repo | Not provisioned; existing Duya projects are unrelated and must not be reused |
-| Edge Function and schema | Prepared in the architecture PR; not deployed |
-| GitHub Actions worker | Added to the architecture PR; requires merge and repository secrets |
+| Supabase project for this repo | Dedicated project `eoqlhihiaqaxxmwdcrsy` in `ca-central-1`; both tracked migrations applied |
+| Edge Function and schema | `mrq-api` v1 is active; database schema and private bucket deployed; server-side secrets still need configuration |
+| GitHub Actions worker | Merged to `main`; repository secrets still need configuration |
 | Real backtest and report retrieval | Not yet verified |
 
 The full setup and acceptance checklist is in [supabase_github_actions.md](supabase_github_actions.md). After the dedicated Supabase project is ready, configure the Site with:
