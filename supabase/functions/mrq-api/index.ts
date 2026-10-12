@@ -109,8 +109,8 @@ function canonicalStrategy(input: unknown): JsonObject {
   const weights: Record<string, number> = {};
   for (const [rawSymbol, rawWeight] of Object.entries(input.weights)) {
     const symbol = rawSymbol.trim().toUpperCase();
-    const weight = Number(rawWeight);
-    if (!SYMBOL_RE.test(symbol) || !Number.isFinite(weight) || weight < 0) {
+    const weight = rawWeight;
+    if (typeof weight !== "number" || !SYMBOL_RE.test(symbol) || !Number.isFinite(weight) || weight < 0) {
       throw new ApiError(422, "invalid_strategy", `Invalid weight or symbol: ${rawSymbol}`);
     }
     if (Object.hasOwn(weights, symbol)) {

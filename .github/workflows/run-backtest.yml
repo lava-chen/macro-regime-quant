@@ -37,4 +37,6 @@ jobs:
       - name: Install the existing quant engine
         run: uv sync --locked --all-packages --all-extras
       - name: Execute and persist the backtest
-        run: uv run --locked --package mrq-cli python scripts/run_backtest_worker.py --run-id "${{ inputs.run_id }}"
+        env:
+          MRQ_RUN_ID: ${{ inputs.run_id }}
+        run: uv run --locked --package mrq-cli python scripts/run_backtest_worker.py --run-id "$MRQ_RUN_ID"
