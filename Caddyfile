@@ -1,4 +1,0 @@
-{$MRQ_DOMAIN} {
-    encode zstd gzip
-    reverse_proxy mrq-api:8000
-}

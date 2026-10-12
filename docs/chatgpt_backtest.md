@@ -1,9 +1,8 @@
 # ChatGPT backtest connection
 
-The repository exposes an authenticated REST API for strategy storage and reproducible backtests. The recommended ChatGPT integration is the owner-private Macro Quant Terminal Site, which provides eight MCP tools and relays requests to this API. Deploy the API as a single process with persistent storage, then set the Site's API URL and bearer token as runtime environment variables. See [deploy_backtest_api.md](deploy_backtest_api.md).
+The Python HTTP API remains available for local development and legacy integrations. The production ChatGPT path uses the private Macro Quant Terminal Site, Supabase as the control plane, and GitHub Actions as a temporary worker running the existing Python engine. No persistent Python HTTP server is required. See [supabase_github_actions.md](supabase_github_actions.md) for the deployment steps.
 
-For existing Custom GPT Actions, `chatgpt/openapi.yaml` remains available as a separate integration path. The API does not receive natural-language instructions: ChatGPT turns a request into an explicit `Strategy` JSON object, which the API validates and runs.
-
+The API does not receive natural-language instructions: ChatGPT turns a request into an explicit `Strategy` JSON object, which is validated before execution.
 ## Local run
 
 ```bash
@@ -15,15 +14,11 @@ uv run --locked --package mrq-cli macro-regime-quant serve-backtest-api
 
 The local API listens on `127.0.0.1:8000`. Check `/health` for liveness. Every other endpoint requires `Authorization: Bearer $MRQ_API_TOKEN`. The endpoint uses Python's standard-library HTTP server; it adds no application-framework dependency to the five-package workspace.
 
-## Legacy Custom GPT Action setup
+## Production ChatGPT/MCP connection
 
-1. Deploy this API to an HTTPS host you control, or use a private-network tunnel. Set `MRQ_API_TOKEN` as a secret on the server and mount persistent storage at `MRQ_STATE_DIR`.
-2. Replace `https://YOUR-BACKTEST-HOST.example` in `chatgpt/openapi.yaml` with the deployed base URL, then import the file in the GPT editor's Actions section.
-3. Configure Bearer authentication with the same API token. Keep the token out of this repository and out of conversation text.
-4. Test `listAssets`, save one named strategy, then call `runBacktest`. A Custom GPT Action is selected by using that GPT; an ordinary chat does not inherit the Action automatically.
+Use the owner-private Macro Quant Terminal Site and its eight installed MCP tools. Configure its server-side `MRQ_BACKTEST_API_URL` to the Supabase Edge Function endpoint and `MRQ_BACKTEST_API_TOKEN` to the matching bearer secret. The Edge Function creates the run in Postgres and dispatches the one-shot GitHub Actions worker. Follow [supabase_github_actions.md](supabase_github_actions.md) for project setup, secrets, publishing, and the end-to-end acceptance check.
 
-The API has no order placement, account access, or arbitrary code execution endpoints. The run endpoint writes a report and exact input price snapshot to persistent local storage so the result can be replayed. If the host has ephemeral disk, mount a persistent volume before using saved strategies.
-
+`chatgpt/openapi.yaml` is retained for legacy Custom GPT Action use. The Python HTTP API command below is a local development interface; do not deploy it as a persistent production backend.
 ## Strategy input and defaults
 
 Weights are long-only, must sum to 1, and may include `CASH`. Supported schedules are `buy_and_hold`, `monthly`, `quarterly`, and `annual`. Start and end dates are inclusive. Defaults are monthly rebalancing, USD 10,000 starting capital, and 5 bps transaction cost. For GLD/QQQ the strategy currency is USD; no FX conversion, taxes, fund premiums, or impact costs are modeled.
