@@ -30,6 +30,21 @@ Weights are long-only, must sum to 1, and may include `CASH`. Supported schedule
 
 For the ordinary allocation engine, a signal from close *t* fills at the next available close. The return ending on that fill date belongs to the old holdings; the new weights begin earning after the fill. `effective_weights` show interval exposure, while `ending_weights` show post-fill exposure. Explicit `CASH` is residual zero-yield cash, not a traded security, so it does not add a second leg to transaction-cost turnover.
 
+Example:
+
+```json
+{
+  "strategy": {
+    "name": "Gold and Nasdaq 50-50",
+    "weights": {"GLD": 0.5, "QQQ": 0.5},
+    "rebalance_frequency": "monthly",
+    "start_date": "2010-01-01",
+    "initial_capital": 100000,
+    "transaction_cost_bps": 5
+  }
+}
+```
+
 An optional `cash_flow` plan adds a weekly deposit, cumulative time-weighted-return take-profit tiers, peak-to-trough drawdown exposure caps, and optional cash reinvestment. With `reinvest_cash: true`, only idle cash already held at the previous close is redeployed on the next selected weekly contribution date; sale proceeds generated at that same close wait until a later contribution date. For example, `return_threshold: 0.20` is a one-time 20% TWR trigger; `sell_fraction: 0.10` sells 10% of risk holdings at the next available close. A `trigger_drawdown: 0.15` rule with `max_invested_weight: 0.50` caps risk assets at 50% of account equity after the next-close execution. Deposit principal is excluded from unitized returns and drawdown; fees remain in performance. The report includes XIRR, all contributions, paid fees, cash balance, trade/event logs, and a same-cash-flow DCA-only benchmark. A drawdown cap reduces exposure but cannot guarantee a maximum loss.
 
 ```json
