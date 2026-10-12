@@ -164,6 +164,11 @@ def process_run(
         print(f"run {run_id}: no claim available; it may already be running or terminal")
         return False
 
+    run_filter = (
+        f"run_id=eq.{run_id}&"
+        f"worker_execution_id=eq.{quote(worker_id, safe='')}"
+    )
+    run_path = f"rest/v1/mrq_backtest_runs?{run_filter}"
     try:
         prepared = row.get("request_json")
         if not isinstance(prepared, dict) or not isinstance(prepared.get("strategy"), dict):
@@ -176,11 +181,6 @@ def process_run(
             artifact_bytes = {name: (run_dir / name).read_bytes() for name in ARTIFACT_NAMES}
             report_value = json.loads(artifact_bytes["report.json"].decode("utf-8"))
             prefix = run_id
-            run_filter = (
-                f"run_id=eq.{run_id}&"
-                f"worker_execution_id=eq.{quote(worker_id, safe='')}"
-            )
-            run_path = f"rest/v1/mrq_backtest_runs?{run_filter}"
 
             mime_types = {
                 "report.json": "application/json",
@@ -217,6 +217,7 @@ def process_run(
                     "finished_at": _now(),
                     "lease_expires_at": None,
                     "error": None,
+                    "updated_at": _now(),
                     "updated_at": _now(),
                 },
                 prefer="return=minimal",

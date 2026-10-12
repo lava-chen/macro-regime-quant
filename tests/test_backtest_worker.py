@@ -103,6 +103,34 @@ class BacktestWorkerTests(unittest.TestCase):
         ]
         self.assertEqual(status_writes[-1]["status"], "succeeded")
 
+    def test_worker_marks_engine_failure_before_artifact_creation(self) -> None:
+        run_id = "bt_0123456789abcdef01234567"
+        api = FakeSupabaseREST(run_id)
+
+        def failing_executor(
+            _prepared: dict[str, Any],
+            _project_root: str | Path,
+            _state_root: str | Path,
+            _current_run_id: str,
+        ) -> dict[str, Any]:
+            raise RuntimeError("price provider unavailable")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaisesRegex(RuntimeError, "price provider unavailable"):
+                process_run(
+                    run_id,
+                    api=api,
+                    executor=failing_executor,
+                    project_root=temp_dir,
+                    worker_id="test-run-1",
+                )
+
+        status_writes = [
+            payload for method, path, payload in api.requests
+            if method == "PATCH" and path.startswith("rest/v1/mrq_backtest_runs?")
+        ]
+        self.assertEqual(status_writes[-1]["status"], "failed")
+
 
 if __name__ == "__main__":
     unittest.main()
