@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """One-shot GitHub Actions worker for a Supabase-queued backtest."""
 
 from __future__ import annotations
@@ -21,6 +20,7 @@ from urllib.request import Request, urlopen
 RUN_ID_PATTERN = re.compile(r"^bt_[a-f0-9]{24}$")
 ARTIFACT_NAMES = ("report.json", "report.md", "price_snapshot.csv")
 MAX_ERROR_CHARS = 500
+WorkerExecutor = Callable[[dict[str, Any], str | Path, str | Path, str], dict[str, Any]]
 
 
 class SupabaseREST:
@@ -57,7 +57,12 @@ class SupabaseREST:
             headers["Content-Type"] = content_type
         if prefer:
             headers["Prefer"] = prefer
-        request = Request(f"{self.base_url}/{path.lstrip('/')}", data=body, headers=headers, method=method)
+        request = Request(
+            f"{self.base_url}/{path.lstrip('/')}",
+            data=body,
+            headers=headers,
+            method=method,
+        )
         try:
             with urlopen(request, timeout=self.timeout) as response:
                 result = response.read()
@@ -93,8 +98,8 @@ class SupabaseREST:
         except (HTTPError, URLError) as exc:
             if isinstance(exc, HTTPError):
                 detail = exc.read(300).decode("utf-8", errors="replace").replace("\n", " ")
-                raise RuntimeError(f"Storage upload failed ({exc.code}): {detail}") from exc
-            raise RuntimeError(f"Storage upload failed: {exc.reason}") from exc
+                raise OSError(f"Storage upload failed ({exc.code}): {detail}") from exc
+            raise OSError(f"Storage upload failed: {exc.reason}") from exc
 
 
 def validate_run_id(run_id: str) -> str:
@@ -141,7 +146,7 @@ def process_run(
     run_id: str,
     *,
     api: SupabaseREST,
-    executor: Callable[[dict[str, Any], str | Path, str | Path, str], dict[str, Any]] = _execute_prepared,
+    executor: WorkerExecutor = _execute_prepared,
     project_root: str | Path,
     worker_id: str | None = None,
 ) -> bool:
@@ -162,7 +167,7 @@ def process_run(
     try:
         prepared = row.get("request_json")
         if not isinstance(prepared, dict) or not isinstance(prepared.get("strategy"), dict):
-            raise ValueError("Stored backtest request is invalid")
+            raise TypeError("Stored backtest request must contain a strategy object")
 
         with tempfile.TemporaryDirectory(prefix=f"mrq-{run_id}-") as work_dir:
             state_root = Path(work_dir) / "state"
@@ -171,6 +176,11 @@ def process_run(
             artifact_bytes = {name: (run_dir / name).read_bytes() for name in ARTIFACT_NAMES}
             report_value = json.loads(artifact_bytes["report.json"].decode("utf-8"))
             prefix = run_id
+            run_filter = (
+                f"run_id=eq.{run_id}&"
+                f"worker_execution_id=eq.{quote(worker_id, safe='')}"
+            )
+            run_path = f"rest/v1/mrq_backtest_runs?{run_filter}"
 
             mime_types = {
                 "report.json": "application/json",
@@ -199,7 +209,7 @@ def process_run(
             )
             api.request(
                 "PATCH",
-                f"rest/v1/mrq_backtest_runs?run_id=eq.{run_id}&worker_execution_id=eq.{quote(worker_id, safe='')}",
+                run_path,
                 payload={
                     "status": "succeeded",
                     "backtest_id": run_id,
@@ -213,10 +223,11 @@ def process_run(
             )
         print(f"run {run_id}: succeeded; report and price snapshot stored privately")
         return True
-    except Exception as error:
+    # The worker boundary must persist unexpected engine/data failures as a terminal run state.
+    except Exception as error:  # noqa: BLE001
         api.request(
             "PATCH",
-            f"rest/v1/mrq_backtest_runs?run_id=eq.{run_id}&worker_execution_id=eq.{quote(worker_id, safe='')}",
+            run_path,
             payload={
                 "status": "failed",
                 "finished_at": _now(),
@@ -241,7 +252,8 @@ def main() -> int:
         )
         process_run(run_id, api=api, project_root=Path.cwd())
         return 0
-    except Exception as error:
+    # Surface any failed invocation as a non-zero Actions job.
+    except Exception as error:  # noqa: BLE001
         print(f"backtest worker failed: {_safe_error(error)}", file=sys.stderr)
         return 1
 
