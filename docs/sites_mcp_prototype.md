@@ -1,46 +1,36 @@
-# Sites/MCP prototype status — 2026-10-10
+# Sites/MCP connection status — 2026-10-12
 
-## What exists
+## Published Site and installed plugin
 
-The connected Macro Quant Terminal Site has a new source version saved as version 8, built from source commit `b8b2696cc4dfa6ec4951df51eb46a5aa9c54bfe4`. The Site stays owner-private. Version 8 was **saved but not deployed**; the current published version remains v7, a static page without an MCP server.
+The owner-private Macro Quant Terminal Site has MCP-enabled v8 published, and the user has installed the private plugin. ChatGPT exposes the eight tools: `list_assets`, `get_data_status`, `list_strategies`, `save_strategy`, `run_backtest`, `get_backtest_status`, `get_backtest_report`, and `compare_backtests`.
 
-The Worker conversion preserves the existing terminal, embeds 15 static UI/data assets as gzip-compressed bytes (about 1.05 MB source to 169 KB gzip), and adds eight stateless MCP tools:
+The tools are discoverable, but real calculations are not connected yet. On 2026-10-12, read-only calls to `list_assets` and `get_data_status` returned `backend_unconfigured` because `MRQ_BACKTEST_API_URL` and `MRQ_BACKTEST_API_TOKEN` are not set on the Site.
 
-- `list_assets`
-- `list_strategies`
-- `save_strategy`
-- `run_backtest`
-- `get_backtest_status`
-- `get_backtest_report`
-- `compare_backtests`
-- `get_data_status`
+## Deployment decision
 
-The Site UI adds a multi-asset allocation form and a `run_id` report lookup. The MCP `dashboard_url` points to that same run ID so the Site reads the Python API's persisted report. `CASH` is explicitly modeled at 0% annual yield; the tool does not describe it as a deposit or treasury yield.
+The production backend will not use a persistent Python HTTP server. Keep the existing MCP tool definitions and route their HTTP calls to a Supabase Edge Function. Supabase manages the private control plane and artifacts; GitHub Actions runs the existing Python engine on a temporary worker.
 
-The Worker is a fixed HTTPS relay. It validates run IDs, keeps the API bearer secret server-side, rejects redirects and untrusted API URLs, and does not forward Site identity headers to the Python API. Strategy input is declarative; the tools cannot execute Python or place orders.
+| Component | Current state |
+|---|---|
+| Private Site v8 and plugin | Published and installed |
+| Eight MCP tools | Available; backend URL/token not configured |
+| Supabase project for this repo | Not provisioned; existing Duya projects are unrelated and must not be reused |
+| Edge Function and schema | Prepared in the architecture PR; not deployed |
+| GitHub Actions worker | Added to the architecture PR; requires merge and repository secrets |
+| Real backtest and report retrieval | Not yet verified |
 
-## Reproduce local checks
+The full setup and acceptance checklist is in [supabase_github_actions.md](supabase_github_actions.md). After the dedicated Supabase project is ready, configure the Site with:
 
-From the Site source checkout:
+- `MRQ_BACKTEST_API_URL=https://YOUR_PROJECT_REF.supabase.co/functions/v1/mrq-api`
+- `MRQ_BACKTEST_API_TOKEN` equal to the Edge Function's `MRQ_MCP_API_TOKEN`
 
-```bash
-npm run build
-npm run validate
-node --test-reporter=spec tests/worker.test.mjs
-node --check live-backtests.js
-```
+Redeploy the private MCP-enabled Site version after setting the server-side environment values. Never put the GitHub dispatch token or Supabase secret key in the Site.
 
-Ten Node tests passed against a mocked HTTPS Python API. They cover MCP discovery/tool inventory, snapshot-quality merge, zero-yield `CASH`, saved strategies, idempotent run submission, status/report/compare, dashboard links, missing/misconfigured backend fail-closed behavior, no identity-header forwarding, compressed asset serving, and rejected methods. These are prototype integration tests only; they do not prove a live Sites dispatch or ChatGPT plugin call.
+## Acceptance checks
 
-## Connection required before publishing
+1. `list_assets`, `get_data_status`, and `list_strategies` return configured backend data.
+2. Save a small strategy, submit a short run, and poll its `run_id` to a terminal state.
+3. Retrieve the full report, then compare it with a second run.
+4. Confirm the report and price snapshot are in private Supabase Storage and unauthenticated requests are rejected.
 
-The Python API is in this repository. PR #26 added `POST /backtest-runs`, `GET /backtest-runs/{run_id}`, and `GET /data-status`. Its SQLite queue and report/snapshot files require a persistent filesystem and a single API process. They are not suitable for an ephemeral filesystem or horizontal scaling as currently implemented.
-
-The Site Worker needs runtime secrets:
-
-- `MRQ_BACKTEST_API_URL`: root HTTPS URL for the Python API.
-- `MRQ_BACKTEST_API_TOKEN`: API bearer token.
-
-Neither value is configured. Without them, `server/discover` and `tools/list` respond, but API-backed MCP and UI calls return `backend_unconfigured`. The Site has not been published with MCP, so there is no provisioned or installable plugin yet. OpenAI's Site flow creates the private plugin when the owner publishes an MCP-enabled Site, then refreshes its tool list on republish: <https://help.openai.com/en/articles/12584461-hosting-a-plugin-with-chatgpt-sites>.
-
-Before publication, choose a Python execution/storage host, configure the two secrets, keep user reports and price snapshots private, and verify one real API run through both MCP and the Site page. The current Site version is unchanged pending those deployment and secret decisions.
+The direct plugin call currently fails before reaching a calculation worker. Do not mark the ChatGPT connection complete until the checks above pass against the real Supabase and Actions deployment.

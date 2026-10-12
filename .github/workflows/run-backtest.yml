@@ -1,0 +1,42 @@
+name: Run backtest worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Supabase backtest run ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mrq-backtest-${{ inputs.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SUPABASE_URL: ${{ secrets.MRQ_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.MRQ_SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - name: Install the existing quant engine
+        run: uv sync --locked --all-packages --all-extras
+      - name: Execute and persist the backtest
+        env:
+          MRQ_RUN_ID: ${{ inputs.run_id }}
+        run: uv run --locked --package mrq-cli python scripts/run_backtest_worker.py --run-id "$MRQ_RUN_ID"
