@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
 
-from scripts.run_backtest_worker import process_run, validate_run_id
+_worker_path = Path(__file__).resolve().parents[1] / "scripts" / "run_backtest_worker.py"
+_worker_spec = importlib.util.spec_from_file_location("mrq_backtest_worker", _worker_path)
+if _worker_spec is None or _worker_spec.loader is None:
+    raise RuntimeError("Could not load the backtest worker module")
+_worker = importlib.util.module_from_spec(_worker_spec)
+_worker_spec.loader.exec_module(_worker)
+process_run = _worker.process_run
+validate_run_id = _worker.validate_run_id
 
 
 class FakeSupabaseREST:
