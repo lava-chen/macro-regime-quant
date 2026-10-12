@@ -1,6 +1,8 @@
 # ChatGPT backtest connection
 
-The repository now exposes an authenticated REST API for strategy storage and repeatable backtests. ChatGPT connects through a Custom GPT Action using `chatgpt/openapi.yaml`; the API itself does not receive natural-language instructions. ChatGPT turns a request into the explicit `Strategy` JSON, and the API validates and runs it.
+The repository exposes an authenticated REST API for strategy storage and reproducible backtests. The recommended ChatGPT integration is the owner-private Macro Quant Terminal Site, which provides eight MCP tools and relays requests to this API. Deploy the API as a single process with persistent storage, then set the Site's API URL and bearer token as runtime environment variables. See [deploy_backtest_api.md](deploy_backtest_api.md).
+
+For existing Custom GPT Actions, `chatgpt/openapi.yaml` remains available as a separate integration path. The API does not receive natural-language instructions: ChatGPT turns a request into an explicit `Strategy` JSON object, which the API validates and runs.
 
 ## Local run
 
@@ -13,7 +15,7 @@ uv run --locked --package mrq-cli macro-regime-quant serve-backtest-api
 
 The local API listens on `127.0.0.1:8000`. Check `/health` for liveness. Every other endpoint requires `Authorization: Bearer $MRQ_API_TOKEN`. The endpoint uses Python's standard-library HTTP server; it adds no application-framework dependency to the five-package workspace.
 
-## Connect a Custom GPT Action
+## Legacy Custom GPT Action setup
 
 1. Deploy this API to an HTTPS host you control, or use a private-network tunnel. Set `MRQ_API_TOKEN` as a secret on the server and mount persistent storage at `MRQ_STATE_DIR`.
 2. Replace `https://YOUR-BACKTEST-HOST.example` in `chatgpt/openapi.yaml` with the deployed base URL, then import the file in the GPT editor's Actions section.
@@ -27,21 +29,6 @@ The API has no order placement, account access, or arbitrary code execution endp
 Weights are long-only, must sum to 1, and may include `CASH`. Supported schedules are `buy_and_hold`, `monthly`, `quarterly`, and `annual`. Start and end dates are inclusive. Defaults are monthly rebalancing, USD 10,000 starting capital, and 5 bps transaction cost. For GLD/QQQ the strategy currency is USD; no FX conversion, taxes, fund premiums, or impact costs are modeled.
 
 For the ordinary allocation engine, a signal from close *t* fills at the next available close. The return ending on that fill date belongs to the old holdings; the new weights begin earning after the fill. `effective_weights` show interval exposure, while `ending_weights` show post-fill exposure. Explicit `CASH` is residual zero-yield cash, not a traded security, so it does not add a second leg to transaction-cost turnover.
-
-Example:
-
-```json
-{
-  "strategy": {
-    "name": "Gold and Nasdaq 50-50",
-    "weights": {"GLD": 0.5, "QQQ": 0.5},
-    "rebalance_frequency": "monthly",
-    "start_date": "2010-01-01",
-    "initial_capital": 100000,
-    "transaction_cost_bps": 5
-  }
-}
-```
 
 An optional `cash_flow` plan adds a weekly deposit, cumulative time-weighted-return take-profit tiers, peak-to-trough drawdown exposure caps, and optional cash reinvestment. With `reinvest_cash: true`, only idle cash already held at the previous close is redeployed on the next selected weekly contribution date; sale proceeds generated at that same close wait until a later contribution date. For example, `return_threshold: 0.20` is a one-time 20% TWR trigger; `sell_fraction: 0.10` sells 10% of risk holdings at the next available close. A `trigger_drawdown: 0.15` rule with `max_invested_weight: 0.50` caps risk assets at 50% of account equity after the next-close execution. Deposit principal is excluded from unitized returns and drawdown; fees remain in performance. The report includes XIRR, all contributions, paid fees, cash balance, trade/event logs, and a same-cash-flow DCA-only benchmark. A drawdown cap reduces exposure but cannot guarantee a maximum loss.
 
@@ -77,10 +64,10 @@ The three external repositories `guidebee/china-stock-data`, `henrywuu91/quant-d
 Longer jobs can use the persistent run queue instead of holding open one HTTP request:
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8000/backtest-runs \\
-  -H "Authorization: Bearer $MRQ_API_TOKEN" \\
-  -H "Idempotency-Key: chat-session-run-001" \\
-  -H 'Content-Type: application/json' \\
+curl -sS -X POST http://127.0.0.1:8000/backtest-runs \
+  -H "Authorization: Bearer $MRQ_API_TOKEN" \
+  -H "Idempotency-Key: chat-session-run-001" \
+  -H 'Content-Type: application/json' \
   --data '{"strategy":{"name":"Cash SPY Gold","weights":{"CASH":0.7,"SPY":0.2,"GLD":0.1},"rebalance_frequency":"annual","initial_capital":10000,"transaction_cost_bps":5}}'
 ```
 

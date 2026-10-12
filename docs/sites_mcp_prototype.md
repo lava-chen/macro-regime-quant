@@ -1,8 +1,10 @@
-# Sites/MCP prototype status — 2026-10-10
+# Sites/MCP connection status — 2026-10-12
 
-## What exists
+## Published Site and plugin
 
-The connected Macro Quant Terminal Site has a new source version saved as version 8, built from source commit `b8b2696cc4dfa6ec4951df51eb46a5aa9c54bfe4`. The Site stays owner-private. Version 8 was **saved but not deployed**; the current published version remains v7, a static page without an MCP server.
+The owner-private Macro Quant Terminal Site has MCP-enabled version 8 published. The Site version was built from source commit `b8b2696cc4dfa6ec4951df51eb46a5aa9c54bfe4`. The owner has installed its private plugin in ChatGPT.
+
+A direct ChatGPT tool-discovery and read-only call was verified on 2026-10-12. ChatGPT exposed all eight tools; `list_assets`, `get_data_status`, and `list_strategies` reached the Site Worker but returned `backend_unconfigured`, because the Site has no Python API URL or token configured. The real calculation and report path has not yet been verified.
 
 The Worker conversion preserves the existing terminal, embeds 15 static UI/data assets as gzip-compressed bytes (about 1.05 MB source to 169 KB gzip), and adds eight stateless MCP tools:
 
@@ -19,7 +21,26 @@ The Site UI adds a multi-asset allocation form and a `run_id` report lookup. The
 
 The Worker is a fixed HTTPS relay. It validates run IDs, keeps the API bearer secret server-side, rejects redirects and untrusted API URLs, and does not forward Site identity headers to the Python API. Strategy input is declarative; the tools cannot execute Python or place orders.
 
-## Reproduce local checks
+## Required API deployment
+
+The Python API is in this repository. Its async queue, reports, strategies, and price snapshots live under `MRQ_STATE_DIR`. It uses SQLite and one worker thread in one API process, so the host must provide persistent disk and run a single instance.
+
+A production Docker/Caddy setup and step-by-step instructions are provided in [deploy_backtest_api.md](deploy_backtest_api.md). The API host needs a public HTTPS hostname and a long random bearer token.
+
+The Site production environment currently has no variables configured. Set these keys after the API is reachable:
+
+- `MRQ_BACKTEST_API_URL`: root HTTPS URL of the Python API.
+- `MRQ_BACKTEST_API_TOKEN`: API bearer token, stored as a Site secret.
+
+Updating Site runtime variables requires redeploying the saved MCP-enabled version before the new runtime revision is active. Keep the Site owner-private.
+
+## Acceptance check after connecting the API
+
+1. From the installed plugin, call `list_assets`, `get_data_status`, and `list_strategies`; these should return API data rather than `backend_unconfigured`.
+2. Save a small declarative test strategy and submit one short backtest.
+3. Poll its `run_id`, fetch the report, and verify that its inputs and report remain available after the API container is restarted.
+
+## Reproduce local Worker checks
 
 From the Site source checkout:
 
@@ -30,17 +51,4 @@ node --test-reporter=spec tests/worker.test.mjs
 node --check live-backtests.js
 ```
 
-Ten Node tests passed against a mocked HTTPS Python API. They cover MCP discovery/tool inventory, snapshot-quality merge, zero-yield `CASH`, saved strategies, idempotent run submission, status/report/compare, dashboard links, missing/misconfigured backend fail-closed behavior, no identity-header forwarding, compressed asset serving, and rejected methods. These are prototype integration tests only; they do not prove a live Sites dispatch or ChatGPT plugin call.
-
-## Connection required before publishing
-
-The Python API is in this repository. PR #26 added `POST /backtest-runs`, `GET /backtest-runs/{run_id}`, and `GET /data-status`. Its SQLite queue and report/snapshot files require a persistent filesystem and a single API process. They are not suitable for an ephemeral filesystem or horizontal scaling as currently implemented.
-
-The Site Worker needs runtime secrets:
-
-- `MRQ_BACKTEST_API_URL`: root HTTPS URL for the Python API.
-- `MRQ_BACKTEST_API_TOKEN`: API bearer token.
-
-Neither value is configured. Without them, `server/discover` and `tools/list` respond, but API-backed MCP and UI calls return `backend_unconfigured`. The Site has not been published with MCP, so there is no provisioned or installable plugin yet. OpenAI's Site flow creates the private plugin when the owner publishes an MCP-enabled Site, then refreshes its tool list on republish: <https://help.openai.com/en/articles/12584461-hosting-a-plugin-with-chatgpt-sites>.
-
-Before publication, choose a Python execution/storage host, configure the two secrets, keep user reports and price snapshots private, and verify one real API run through both MCP and the Site page. The current Site version is unchanged pending those deployment and secret decisions.
+Ten Node tests passed against a mocked HTTPS Python API. They cover MCP discovery/tool inventory, snapshot-quality merge, zero-yield `CASH`, saved strategies, idempotent run submission, status/report/compare, dashboard links, missing/misconfigured backend fail-closed behavior, no identity-header forwarding, compressed asset serving, and rejected methods. These are prototype integration tests only; they do not prove a live API calculation.

@@ -1,0 +1,53 @@
+services:
+  mrq-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    expose:
+      - "8000"
+    environment:
+      MRQ_API_TOKEN: ${MRQ_API_TOKEN:?Set MRQ_API_TOKEN in .env}
+      MRQ_PROJECT_ROOT: /app
+      MRQ_STATE_DIR: /var/lib/mrq
+    volumes:
+      - mrq_state:/var/lib/mrq
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      mrq-api:
+        condition: service_healthy
+    environment:
+      MRQ_DOMAIN: ${MRQ_DOMAIN:?Set MRQ_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  mrq_state:
+  caddy_data:
+  caddy_config:
