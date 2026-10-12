@@ -69,6 +69,22 @@ create table if not exists public.mrq_backtest_runs (
 create index if not exists mrq_backtest_runs_status_time_idx
     on public.mrq_backtest_runs (status, submitted_at desc);
 
+create table if not exists public.mrq_asset_data_status (
+    symbol text primary key references public.mrq_assets(symbol) on delete cascade,
+    availability text not null check (availability in ('provider_configured', 'snapshot_available')),
+    coverage_start date,
+    coverage_end date,
+    observations integer check (observations is null or observations >= 0),
+    retrieved_at timestamptz,
+    source_url text,
+    price_basis text,
+    content_sha256 text check (content_sha256 is null or content_sha256 ~ '^[0-9a-f]{64}$'),
+    quality text not null,
+    point_in_time_vintage boolean not null default false,
+    last_run_id text references public.mrq_backtest_runs(run_id) on delete set null,
+    updated_at timestamptz not null default now()
+);
+
 create table if not exists public.mrq_backtest_reports (
     run_id text primary key references public.mrq_backtest_runs(run_id) on delete cascade,
     strategy_json jsonb not null,
@@ -86,18 +102,21 @@ alter table public.mrq_assets enable row level security;
 alter table public.mrq_strategies enable row level security;
 alter table public.mrq_strategy_versions enable row level security;
 alter table public.mrq_backtest_runs enable row level security;
+alter table public.mrq_asset_data_status enable row level security;
 alter table public.mrq_backtest_reports enable row level security;
 
 revoke all on table public.mrq_assets from public, anon, authenticated;
 revoke all on table public.mrq_strategies from public, anon, authenticated;
 revoke all on table public.mrq_strategy_versions from public, anon, authenticated;
 revoke all on table public.mrq_backtest_runs from public, anon, authenticated;
+revoke all on table public.mrq_asset_data_status from public, anon, authenticated;
 revoke all on table public.mrq_backtest_reports from public, anon, authenticated;
 
 grant select on table public.mrq_assets to service_role;
 grant select, insert, update, delete on table public.mrq_strategies to service_role;
 grant select, insert, update, delete on table public.mrq_strategy_versions to service_role;
 grant select, insert, update, delete on table public.mrq_backtest_runs to service_role;
+grant select, insert, update, delete on table public.mrq_asset_data_status to service_role;
 grant select, insert, update, delete on table public.mrq_backtest_reports to service_role;
 
 create or replace function public.save_mrq_strategy(

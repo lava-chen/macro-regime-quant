@@ -221,6 +221,43 @@ def process_run(
                 },
                 prefer="return=minimal",
             )
+
+            price_sources = report_value.get("data", {}).get("price_sources", [])
+            status_rows = [
+                {
+                    "symbol": str(source["symbol"]).upper(),
+                    "availability": "snapshot_available",
+                    "coverage_start": source.get("first_date"),
+                    "coverage_end": source.get("last_date"),
+                    "observations": source.get("observations"),
+                    "retrieved_at": source.get("retrieved_at"),
+                    "source_url": source.get("source_url"),
+                    "price_basis": source.get("price_basis"),
+                    "content_sha256": source.get("content_sha256"),
+                    "quality": "successful_backtest_input",
+                    "point_in_time_vintage": report_value["data"].get(
+                        "source_data_is_point_in_time_vintage", False
+                    ),
+                    "last_run_id": run_id,
+                    "updated_at": _now(),
+                }
+                for source in price_sources
+                if isinstance(source, dict) and isinstance(source.get("symbol"), str)
+            ]
+            if status_rows:
+                try:
+                    api.request(
+                        "POST",
+                        "rest/v1/mrq_asset_data_status?on_conflict=symbol",
+                        payload=status_rows,
+                        prefer="resolution=merge-duplicates,return=minimal",
+                    )
+                # A data-index failure should not undo a saved report.
+                except Exception as error:  # noqa: BLE001
+                    print(
+                        f"run {run_id}: could not refresh data index: {_safe_error(error)}",
+                        file=sys.stderr,
+                    )
         print(f"run {run_id}: succeeded; report and price snapshot stored privately")
         return True
     # The worker boundary must persist unexpected engine/data failures as a terminal run state.

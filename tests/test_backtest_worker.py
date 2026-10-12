@@ -62,7 +62,22 @@ class BacktestWorkerTests(unittest.TestCase):
                 "strategy": {"name": "test", "weights": {"SPY": 1.0}},
                 "metrics": {"cagr": 0.05},
                 "period": {"actual_start": "2020-01-01", "actual_end": "2024-12-31"},
-                "data": {"input_sha256": "a" * 64},
+                "data": {
+                    "input_sha256": "a" * 64,
+                    "price_sources": [
+                        {
+                            "symbol": "SPY",
+                            "first_date": "2020-01-01",
+                            "last_date": "2024-12-31",
+                            "observations": 1000,
+                            "retrieved_at": "2025-01-01T00:00:00+00:00",
+                            "source_url": "https://example.test/spy",
+                            "price_basis": "adjusted_close",
+                            "content_sha256": "b" * 64,
+                        }
+                    ],
+                    "source_data_is_point_in_time_vintage": False,
+                },
                 "generated_at": "2025-01-01T00:00:00+00:00",
             }
             run_dir = Path(state_root) / "backtests" / current_run_id
@@ -97,6 +112,12 @@ class BacktestWorkerTests(unittest.TestCase):
             if method == "POST" and path.startswith("rest/v1/mrq_backtest_reports")
         ]
         self.assertEqual(report_writes[0]["metrics"], {"cagr": 0.05})
+        data_index_writes = [
+            payload for method, path, payload in api.requests
+            if method == "POST" and path.startswith("rest/v1/mrq_asset_data_status")
+        ]
+        self.assertEqual(data_index_writes[0][0]["symbol"], "SPY")
+        self.assertEqual(data_index_writes[0][0]["last_run_id"], run_id)
         status_writes = [
             payload for method, path, payload in api.requests
             if method == "PATCH" and path.startswith("rest/v1/mrq_backtest_runs?")

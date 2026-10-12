@@ -377,24 +377,36 @@ async function assets(admin: Admin): Promise<Response> {
 }
 
 async function dataStatus(admin: Admin): Promise<Response> {
-  const { data, error } = await admin.from("mrq_assets").select("symbol,kind,provider").order("symbol");
-  if (error) throw apiErrorFromDatabase(error);
-  const configured = (data ?? []).map((asset) => {
+  const [assetResult, statusResult] = await Promise.all([
+    admin.from("mrq_assets").select("symbol,kind,provider").order("symbol"),
+    admin.from("mrq_asset_data_status").select("*"),
+  ]);
+  if (assetResult.error) throw apiErrorFromDatabase(assetResult.error);
+  if (statusResult.error) throw apiErrorFromDatabase(statusResult.error);
+  const statusBySymbol = new Map(
+    (statusResult.data ?? []).map((row) => [String(row.symbol).toUpperCase(), row as JsonObject]),
+  );
+  const configured = (assetResult.data ?? []).map((asset) => {
     const row = asset as JsonObject;
     const synthetic = row.provider === "synthetic";
+    const snapshot = statusBySymbol.get(String(row.symbol).toUpperCase());
     return {
       ...row,
-      availability: synthetic ? "synthetic_zero_yield" : "provider_configured",
-      coverage_start: null,
-      coverage_end: null,
-      observations: null,
-      retrieved_at: null,
-      source_url: null,
-      price_basis: null,
-      content_sha256: null,
-      quality: synthetic ? "modeled_assumption" : "not_fetched",
+      availability: snapshot?.availability ?? (synthetic ? "synthetic_zero_yield" : "provider_configured"),
+      coverage_start: snapshot?.coverage_start ?? null,
+      coverage_end: snapshot?.coverage_end ?? null,
+      observations: snapshot?.observations ?? null,
+      retrieved_at: snapshot?.retrieved_at ?? null,
+      source_url: snapshot?.source_url ?? null,
+      price_basis: snapshot?.price_basis ?? null,
+      content_sha256: snapshot?.content_sha256 ?? null,
+      quality: snapshot?.quality ?? (synthetic ? "modeled_assumption" : "not_fetched"),
+      point_in_time_vintage: snapshot?.point_in_time_vintage ?? false,
+      last_run_id: snapshot?.last_run_id ?? null,
       note: synthetic
         ? "CASH is modeled at 0% annual yield; it is not an interest-bearing cash proxy."
+        : snapshot
+        ? "Latest source record used by a successful backtest; it is not a point-in-time vintage claim."
         : "Provider configuration is not a successful fetch; actual coverage is unknown until a worker requests it.",
     };
   });

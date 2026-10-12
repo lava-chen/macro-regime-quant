@@ -1,13 +1,13 @@
 # Supabase control plane and GitHub Actions worker
 
-This is the production path for the private Macro Quant Terminal Site. The eight MCP tools stay in the Site; their HTTPS API base changes to the Supabase Edge Function. Supabase owns authentication, strategy versions, run state, report metrics, and private artifacts. GitHub Actions starts a temporary Ubuntu runner for each queued backtest and runs the repository's existing Python engine. No persistent Python HTTP server is part of this deployment.
+This is the production path for the private Macro Quant Terminal Site. The eight MCP tools stay in the Site; their HTTPS API base changes to the Supabase Edge Function. Supabase owns authentication, strategy versions, run state, report metrics, a per-symbol data-status index, and private artifacts. GitHub Actions starts a temporary Ubuntu runner for each queued backtest and runs the repository's existing Python engine. No persistent Python HTTP server is part of this deployment.
 
 ## Request and data flow
 
 1. The Site Worker calls `POST /backtest-runs` with its bearer token.
 2. The `mrq-api` Edge Function validates the declarative strategy, stores an idempotent queued run in Postgres, and dispatches `run-backtest.yml` through the GitHub API.
 3. The workflow checks out `main`, installs the existing `mrq-cli` workspace, atomically claims the run, and executes `execute_backtest` in a temporary runner directory.
-4. The worker uploads `report.json`, `report.md`, and `price_snapshot.csv` to the private `mrq-backtest-artifacts` bucket. It writes report metrics and checksums to Postgres, then marks the run `succeeded`.
+4. The worker uploads `report.json`, `report.md`, and `price_snapshot.csv` to the private `mrq-backtest-artifacts` bucket. It writes report metrics, checksums, and the latest successful per-symbol source coverage to Postgres, then marks the run `succeeded`.
 5. The Site Worker polls `GET /backtest-runs/{run_id}` and reads `GET /backtests/{run_id}`. The compare tool can fetch multiple stored reports through the same route.
 
 The adapter keeps the current API paths used by the MCP tools: `/assets`, `/data-status`, `/strategies`, `/strategies/{id}/versions`, `/backtest-runs`, `/backtests`, and `/backtests/{run_id}`. `POST /backtests` is accepted as an asynchronous alias for compatibility.
@@ -24,7 +24,7 @@ supabase migration new mrq_control_plane
 supabase db push
 ```
 
-The SQL creates the strategy/version tables, backtest queue, report metrics table, worker claim functions, supported market symbols, and a private Storage bucket. The tables have RLS enabled, and direct grants are revoked from `anon` and `authenticated`; only the backend `service_role` can access them. The bucket is private and has no public read policy.
+The SQL creates the strategy/version tables, backtest queue, report metrics table, worker claim functions, supported market symbols, a per-symbol latest source-status index, and a private Storage bucket. The tables have RLS enabled, and direct grants are revoked from `anon` and `authenticated`; only the backend `service_role` can access them. The bucket is private and has no public read policy.
 
 ## Configure secrets
 
