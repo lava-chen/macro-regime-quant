@@ -14,18 +14,22 @@ The adapter keeps the current API paths used by the MCP tools: `/assets`, `/data
 
 ## Provision the Supabase project
 
-Use a dedicated project for Macro Regime Quant. Do not reuse the unrelated Duya projects. After creating and linking the project with the Supabase CLI, generate a timestamped migration with the CLI and copy the contents of `supabase/schema.sql` into it:
+Use a dedicated project for Macro Regime Quant. The live project `eoqlhihiaqaxxmwdcrsy` has the two tracked migrations below applied. Do not reuse the unrelated Duya projects.
+
+- `20261012032108_mrq_control_plane.sql`: strategies, runs, reports, asset status, RPCs, and the private Storage bucket.
+- `20261012032226_mrq_foreign_key_indexes.sql`: indexes for the run-to-strategy and data-status-to-run foreign keys.
+
+For a fresh project, initialize and link the Supabase CLI, then push the tracked migrations:
 
 ```bash
 supabase init
 supabase link --project-ref YOUR_PROJECT_REF
-supabase migration new mrq_control_plane
-# Copy supabase/schema.sql into the new migration file.
+supabase migration list
 supabase db push
+supabase migration list
 ```
 
-The SQL creates the strategy/version tables, backtest queue, report metrics table, worker claim functions, supported market symbols, a per-symbol latest source-status index, and a private Storage bucket. The tables have RLS enabled, and direct grants are revoked from `anon` and `authenticated`; only the backend `service_role` can access them. The bucket is private and has no public read policy.
-
+The live project should show both versions as applied. `supabase/schema.sql` remains a bootstrap snapshot; add future production schema changes as new timestamped migration files. The migrations enable RLS, revoke direct access from `anon` and `authenticated`, grant table/RPC access only to `service_role`, and keep the `mrq-backtest-artifacts` Storage bucket private.
 ## Configure secrets
 
 Generate a random API bearer token, then set these secrets for the Edge Function. Use a named Supabase secret key in place of the placeholder. Keep secret values out of shell history where practical.
