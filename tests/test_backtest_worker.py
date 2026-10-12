@@ -115,15 +115,17 @@ class BacktestWorkerTests(unittest.TestCase):
         ) -> dict[str, Any]:
             raise RuntimeError("price provider unavailable")
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with self.assertRaisesRegex(RuntimeError, "price provider unavailable"):
-                process_run(
-                    run_id,
-                    api=api,
-                    executor=failing_executor,
-                    project_root=temp_dir,
-                    worker_id="test-run-1",
-                )
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            self.assertRaisesRegex(RuntimeError, "price provider unavailable"),
+        ):
+            process_run(
+                run_id,
+                api=api,
+                executor=failing_executor,
+                project_root=temp_dir,
+                worker_id="test-run-1",
+            )
 
         status_writes = [
             payload for method, path, payload in api.requests

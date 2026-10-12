@@ -218,14 +218,13 @@ def process_run(
                     "lease_expires_at": None,
                     "error": None,
                     "updated_at": _now(),
-                    "updated_at": _now(),
                 },
                 prefer="return=minimal",
             )
         print(f"run {run_id}: succeeded; report and price snapshot stored privately")
         return True
     # The worker boundary must persist unexpected engine/data failures as a terminal run state.
-    except Exception as error:  # noqa: BLE001
+    except Exception as error:
         api.request(
             "PATCH",
             run_path,
