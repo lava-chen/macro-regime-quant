@@ -1,7 +1,6 @@
 -- Bootstrap schema for the private Macro Regime Quant Supabase project.
--- Keep this file as the source SQL until a project is provisioned; create the
--- tracked migration with `supabase migration new mrq_control_plane` before
--- applying it with `supabase db push`.
+-- The applied baseline and follow-up index migration are tracked under
+-- supabase/migrations/. Keep this bootstrap snapshot aligned with them.
 
 create table if not exists public.mrq_assets (
     symbol text primary key check (symbol ~ '^[A-Z0-9.^=_-]{1,24}$'),
@@ -97,6 +96,12 @@ create table if not exists public.mrq_backtest_reports (
     generated_at timestamptz,
     created_at timestamptz not null default now()
 );
+
+create index if not exists mrq_asset_data_status_last_run_id_idx
+    on public.mrq_asset_data_status (last_run_id);
+
+create index if not exists mrq_backtest_runs_strategy_id_idx
+    on public.mrq_backtest_runs (strategy_id);
 
 alter table public.mrq_assets enable row level security;
 alter table public.mrq_strategies enable row level security;
