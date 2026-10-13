@@ -1,9 +1,9 @@
 {
   "schema_version": "china-macro-watch-audit/1",
   "status": "success",
-  "started_at": "2026-10-13T05:59:18+08:00",
-  "finished_at": "2026-10-13T06:06:51+08:00",
-  "as_of": "2026-10-13",
+  "started_at": "2026-10-14T04:06:34+08:00",
+  "finished_at": "2026-10-14T04:12:51+08:00",
+  "as_of": "2026-10-14",
   "scan_window": {
     "start_year": 2025,
     "end_year": 2026,
@@ -75,7 +75,7 @@
           "unknown_release_dates": 0
         }
       },
-      "downloaded_at": "2026-10-13T06:06:22+08:00"
+      "downloaded_at": "2026-10-14T04:12:27+08:00"
     },
     "pboc": {
       "listing_pages_scanned": 38,
@@ -105,7 +105,7 @@
           "unknown_release_dates": 0
         }
       },
-      "downloaded_at": "2026-10-13T06:06:51+08:00"
+      "downloaded_at": "2026-10-14T04:12:51+08:00"
     }
   },
   "errors": [],
@@ -119,12 +119,12 @@
       {
         "series_id": "cn_retail_sales",
         "latest_period": "2026-06",
-        "age_days": 90
+        "age_days": 91
       },
       {
         "series_id": "cn_tsf_stock_yoy",
         "latest_period": "2025-08",
-        "age_days": 396
+        "age_days": 397
       }
     ],
     "missing_periods": [
