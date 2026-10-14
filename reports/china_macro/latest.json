@@ -1,8 +1,8 @@
 {
   "schema_version": "china-macro-watch-report/1",
-  "as_of": "2026-10-14",
-  "generated_at": "2026-10-14T04:12:52+08:00",
-  "data_updated_at": "2026-10-11T02:34:11+08:00",
+  "as_of": "2026-10-15",
+  "generated_at": "2026-10-15T02:27:58+08:00",
+  "data_updated_at": "2026-10-15T02:27:57+08:00",
   "classification": {
     "observed_data": "Official reported values and evidenced publication dates.",
     "model_inference": "Past-only standardized factors and the Growth/Inflation quadrant label.",
@@ -96,21 +96,20 @@
     "cn_cpi": {
       "name": "CPI 同比",
       "status": "available",
-      "observation_period": "2026-08",
-      "observation_date": "2026-08-31",
-      "available_date": "2026-09-09",
-      "value": 0.8,
-      "previous_observation_period": "2026-07",
-      "previous_value": 0.5,
-      "change_vs_previous_release": 0.30000000000000004,
+      "observation_period": "2026-09",
+      "observation_date": "2026-09-30",
+      "available_date": "2026-10-14",
+      "value": 0.9,
+      "previous_observation_period": "2026-08",
+      "previous_value": 0.8,
+      "change_vs_previous_release": 0.09999999999999998,
       "comparison_basis": "previous published observation; periods may span multiple months",
       "unit": "percent_yoy",
       "reported_as": "percent_yoy",
-      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260909_1965263.html",
-      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260909_1965263.html",
+      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261014_1965477.html",
+      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261014_1965477.html",
       "quality_flags": [
-        "release_date_has_official_evidence",
-        "seeded_from_frozen_pr13_snapshot"
+        "release_date_has_official_evidence"
       ]
     },
     "cn_core_cpi": {
@@ -121,21 +120,20 @@
     "cn_ppi": {
       "name": "PPI 同比",
       "status": "available",
-      "observation_period": "2026-08",
-      "observation_date": "2026-08-31",
-      "available_date": "2026-09-09",
-      "value": 3.8,
-      "previous_observation_period": "2026-07",
-      "previous_value": 3.5,
-      "change_vs_previous_release": 0.2999999999999998,
+      "observation_period": "2026-09",
+      "observation_date": "2026-09-30",
+      "available_date": "2026-10-14",
+      "value": 5.0,
+      "previous_observation_period": "2026-08",
+      "previous_value": 3.8,
+      "change_vs_previous_release": 1.2000000000000002,
       "comparison_basis": "previous published observation; periods may span multiple months",
       "unit": "percent_yoy",
       "reported_as": "percent_yoy",
-      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260909_1965262.html",
-      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260909_1965262.html",
+      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261014_1965476.html",
+      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261014_1965476.html",
       "quality_flags": [
-        "release_date_has_official_evidence",
-        "seeded_from_frozen_pr13_snapshot"
+        "release_date_has_official_evidence"
       ]
     },
     "cn_pmi_new_orders": {
@@ -161,41 +159,39 @@
     "cn_m1": {
       "name": "M1 同比",
       "status": "available",
-      "observation_period": "2026-08",
-      "observation_date": "2026-08-31",
-      "available_date": "2026-09-14",
-      "value": 4.1,
-      "previous_observation_period": "2026-07",
-      "previous_value": 4.0,
-      "change_vs_previous_release": 0.09999999999999964,
+      "observation_period": "2026-09",
+      "observation_date": "2026-09-30",
+      "available_date": "2026-10-14",
+      "value": 3.2,
+      "previous_observation_period": "2026-08",
+      "previous_value": 4.1,
+      "change_vs_previous_release": -0.8999999999999995,
       "comparison_basis": "previous published observation; periods may span multiple months",
       "unit": "percent_yoy",
       "reported_as": "percent_yoy",
-      "source_value_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2026091417020862747/index.html",
-      "availability_evidence_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2026091417020862747/index.html",
+      "source_value_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2026101417073743604/index.html",
+      "availability_evidence_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2026101417073743604/index.html",
       "quality_flags": [
-        "release_date_has_official_evidence",
-        "seeded_from_frozen_pr13_snapshot"
+        "release_date_has_official_evidence"
       ]
     },
     "cn_m2": {
       "name": "M2 同比",
       "status": "available",
-      "observation_period": "2026-08",
-      "observation_date": "2026-08-31",
-      "available_date": "2026-09-14",
-      "value": 7.5,
-      "previous_observation_period": "2026-07",
-      "previous_value": 7.7,
-      "change_vs_previous_release": -0.20000000000000018,
+      "observation_period": "2026-09",
+      "observation_date": "2026-09-30",
+      "available_date": "2026-10-14",
+      "value": 7.2,
+      "previous_observation_period": "2026-08",
+      "previous_value": 7.5,
+      "change_vs_previous_release": -0.2999999999999998,
       "comparison_basis": "previous published observation; periods may span multiple months",
       "unit": "percent_yoy",
       "reported_as": "percent_yoy",
-      "source_value_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2026091417020862747/index.html",
-      "availability_evidence_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2026091417020862747/index.html",
+      "source_value_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2026101417073743604/index.html",
+      "availability_evidence_url": "https://www.pbc.gov.cn/diaochatongjisi/116219/116225/2026101417073743604/index.html",
       "quality_flags": [
-        "release_date_has_official_evidence",
-        "seeded_from_frozen_pr13_snapshot"
+        "release_date_has_official_evidence"
       ]
     },
     "cn_tsf_stock_yoy": {
@@ -241,26 +237,26 @@
     },
     "inflation": {
       "status": "available",
-      "score": 0.3634905379555644,
+      "score": 0.5364876016510626,
       "previous_score": 0.368353011885935,
-      "change": -0.004862473930370592,
+      "change": 0.16813458976512757,
       "state": "above_expanding_mean",
       "minimum_prior_observations": 36,
       "contributions": {
-        "cpi_yoy": 0.04535789857453947,
-        "ppi_yoy": 0.31813263938102493
+        "cpi_yoy": 0.11226079897198511,
+        "ppi_yoy": 0.4242268026790775
       }
     },
     "liquidity": {
       "status": "available",
-      "score": -0.9239200161185565,
+      "score": -0.9761093037720121,
       "previous_score": -0.9300312278141387,
-      "change": 0.006111211695582264,
+      "change": -0.04607807595787339,
       "state": "below_expanding_mean",
       "minimum_prior_observations": 36,
       "contributions": {
-        "m1_yoy": -0.18242372997296838,
-        "m2_yoy": -0.20968033228146343,
+        "m1_yoy": -0.219137888974303,
+        "m2_yoy": -0.2251554609335846,
         "tsf_stock_yoy": -0.5318159538641246
       }
     },
@@ -290,24 +286,53 @@
       "cn_10y",
       "cn_core_cpi"
     ],
-    "official_release_rows": 863,
+    "official_release_rows": 867,
     "official_release_evidence_rate": 1.0,
     "unknown_release_date_rows_in_ledger": 0
   },
   "quality": {
-    "new_releases": [],
+    "new_releases": [
+      {
+        "event": "new_release",
+        "series_id": "cn_cpi",
+        "observation_period": "2026-09",
+        "value": 0.9,
+        "vintage": "2026-10-14"
+      },
+      {
+        "event": "new_release",
+        "series_id": "cn_ppi",
+        "observation_period": "2026-09",
+        "value": 5.0,
+        "vintage": "2026-10-14"
+      },
+      {
+        "event": "new_release",
+        "series_id": "cn_m1",
+        "observation_period": "2026-09",
+        "value": 3.2,
+        "vintage": "2026-10-14"
+      },
+      {
+        "event": "new_release",
+        "series_id": "cn_m2",
+        "observation_period": "2026-09",
+        "value": 7.2,
+        "vintage": "2026-10-14"
+      }
+    ],
     "historical_revisions": [],
     "provenance_updates": [],
     "stale_series": [
       {
         "series_id": "cn_retail_sales",
         "latest_period": "2026-06",
-        "age_days": 91
+        "age_days": 92
       },
       {
         "series_id": "cn_tsf_stock_yoy",
         "latest_period": "2025-08",
-        "age_days": 397
+        "age_days": 398
       }
     ],
     "missing_periods": [
@@ -414,9 +439,9 @@
   },
   "collection": {
     "status": "success",
-    "last_attempt_at": "2026-10-14T04:12:51+08:00",
+    "last_attempt_at": "2026-10-15T02:27:57+08:00",
     "errors": [],
-    "new_rows_appended": 0
+    "new_rows_appended": 4
   },
   "not_collected": [
     {
