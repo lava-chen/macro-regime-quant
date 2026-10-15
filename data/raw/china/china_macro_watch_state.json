@@ -1,7 +1,7 @@
 {
   "schema_version": "china-macro-watch-state/1",
-  "last_successful_at": "2026-10-15T02:27:57+08:00",
-  "successful_runs": 5,
+  "last_successful_at": "2026-10-16T02:10:42+08:00",
+  "successful_runs": 6,
   "last_scan_window": {
     "start_year": 2025,
     "end_year": 2026,

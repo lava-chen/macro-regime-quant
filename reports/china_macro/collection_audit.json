@@ -1,9 +1,9 @@
 {
   "schema_version": "china-macro-watch-audit/1",
   "status": "success",
-  "started_at": "2026-10-15T02:20:29+08:00",
-  "finished_at": "2026-10-15T02:27:57+08:00",
-  "as_of": "2026-10-15",
+  "started_at": "2026-10-16T02:02:32+08:00",
+  "finished_at": "2026-10-16T02:10:42+08:00",
+  "as_of": "2026-10-16",
   "scan_window": {
     "start_year": 2025,
     "end_year": 2026,
@@ -75,7 +75,7 @@
           "unknown_release_dates": 0
         }
       },
-      "downloaded_at": "2026-10-15T02:27:30+08:00"
+      "downloaded_at": "2026-10-16T02:10:12+08:00"
     },
     "pboc": {
       "listing_pages_scanned": 38,
@@ -105,84 +105,26 @@
           "unknown_release_dates": 0
         }
       },
-      "downloaded_at": "2026-10-15T02:27:57+08:00"
+      "downloaded_at": "2026-10-16T02:10:42+08:00"
     }
   },
   "errors": [],
-  "new_rows_appended": 4,
-  "events": [
-    {
-      "event": "new_release",
-      "series_id": "cn_cpi",
-      "observation_period": "2026-09",
-      "value": 0.9,
-      "vintage": "2026-10-14"
-    },
-    {
-      "event": "new_release",
-      "series_id": "cn_ppi",
-      "observation_period": "2026-09",
-      "value": 5.0,
-      "vintage": "2026-10-14"
-    },
-    {
-      "event": "new_release",
-      "series_id": "cn_m1",
-      "observation_period": "2026-09",
-      "value": 3.2,
-      "vintage": "2026-10-14"
-    },
-    {
-      "event": "new_release",
-      "series_id": "cn_m2",
-      "observation_period": "2026-09",
-      "value": 7.2,
-      "vintage": "2026-10-14"
-    }
-  ],
+  "new_rows_appended": 0,
+  "events": [],
   "quality": {
-    "new_releases": [
-      {
-        "event": "new_release",
-        "series_id": "cn_cpi",
-        "observation_period": "2026-09",
-        "value": 0.9,
-        "vintage": "2026-10-14"
-      },
-      {
-        "event": "new_release",
-        "series_id": "cn_ppi",
-        "observation_period": "2026-09",
-        "value": 5.0,
-        "vintage": "2026-10-14"
-      },
-      {
-        "event": "new_release",
-        "series_id": "cn_m1",
-        "observation_period": "2026-09",
-        "value": 3.2,
-        "vintage": "2026-10-14"
-      },
-      {
-        "event": "new_release",
-        "series_id": "cn_m2",
-        "observation_period": "2026-09",
-        "value": 7.2,
-        "vintage": "2026-10-14"
-      }
-    ],
+    "new_releases": [],
     "historical_revisions": [],
     "provenance_updates": [],
     "stale_series": [
       {
         "series_id": "cn_retail_sales",
         "latest_period": "2026-06",
-        "age_days": 92
+        "age_days": 93
       },
       {
         "series_id": "cn_tsf_stock_yoy",
         "latest_period": "2025-08",
-        "age_days": 398
+        "age_days": 399
       }
     ],
     "missing_periods": [
