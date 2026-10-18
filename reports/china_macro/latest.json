@@ -1,7 +1,7 @@
 {
   "schema_version": "china-macro-watch-report/1",
-  "as_of": "2026-10-18",
-  "generated_at": "2026-10-18T01:00:22+08:00",
+  "as_of": "2026-10-19",
+  "generated_at": "2026-10-19T01:14:12+08:00",
   "data_updated_at": "2026-10-15T02:27:57+08:00",
   "classification": {
     "observed_data": "Official reported values and evidenced publication dates.",
@@ -298,12 +298,12 @@
       {
         "series_id": "cn_retail_sales",
         "latest_period": "2026-06",
-        "age_days": 95
+        "age_days": 96
       },
       {
         "series_id": "cn_tsf_stock_yoy",
         "latest_period": "2025-08",
-        "age_days": 401
+        "age_days": 402
       }
     ],
     "missing_periods": [
@@ -410,7 +410,7 @@
   },
   "collection": {
     "status": "success",
-    "last_attempt_at": "2026-10-18T01:00:21+08:00",
+    "last_attempt_at": "2026-10-19T01:14:11+08:00",
     "errors": [],
     "new_rows_appended": 0
   },
