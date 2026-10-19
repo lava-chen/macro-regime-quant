@@ -1,8 +1,8 @@
 {
   "schema_version": "china-macro-watch-report/1",
-  "as_of": "2026-10-19",
-  "generated_at": "2026-10-19T01:14:12+08:00",
-  "data_updated_at": "2026-10-15T02:27:57+08:00",
+  "as_of": "2026-10-20",
+  "generated_at": "2026-10-20T03:49:35+08:00",
+  "data_updated_at": "2026-10-20T03:49:04+08:00",
   "classification": {
     "observed_data": "Official reported values and evidenced publication dates.",
     "model_inference": "Past-only standardized factors and the Growth/Inflation quadrant label.",
@@ -12,21 +12,20 @@
     "cn_industrial_production": {
       "name": "工业增加值同比",
       "status": "available",
-      "observation_period": "2026-08",
-      "observation_date": "2026-08-31",
-      "available_date": "2026-09-15",
-      "value": 5.2,
-      "previous_observation_period": "2026-07",
-      "previous_value": 4.5,
-      "change_vs_previous_release": 0.7000000000000002,
+      "observation_period": "2026-09",
+      "observation_date": "2026-09-30",
+      "available_date": "2026-10-19",
+      "value": 5.5,
+      "previous_observation_period": "2026-08",
+      "previous_value": 5.2,
+      "change_vs_previous_release": 0.2999999999999998,
       "comparison_basis": "previous published observation; periods may span multiple months",
       "unit": "percent_yoy",
       "reported_as": "percent_yoy",
-      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965308.html",
-      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965308.html",
+      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261019_1965617.html",
+      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261019_1965617.html",
       "quality_flags": [
-        "release_date_has_official_evidence",
-        "seeded_from_frozen_pr13_snapshot"
+        "release_date_has_official_evidence"
       ]
     },
     "cn_retail_sales": {
@@ -52,45 +51,43 @@
     "cn_retail_sales_ytd": {
       "name": "社会消费品零售总额累计同比",
       "status": "available",
-      "observation_period": "2026-01/2026-08",
-      "observation_date": "2026-08-31",
-      "available_date": "2026-09-15",
+      "observation_period": "2026-01/2026-09",
+      "observation_date": "2026-09-30",
+      "available_date": "2026-10-19",
       "value": 1.1,
-      "previous_observation_period": "2026-01/2026-07",
-      "previous_value": 1.2,
-      "change_vs_previous_release": -0.09999999999999987,
+      "previous_observation_period": "2026-01/2026-08",
+      "previous_value": 1.1,
+      "change_vs_previous_release": 0.0,
       "comparison_basis": "previous published observation; periods may span multiple months",
       "unit": "percent_yoy",
       "reported_as": "cumulative_ytd_yoy",
-      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965311.html",
-      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965311.html",
+      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261019_1965614.html",
+      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261019_1965614.html",
       "quality_flags": [
         "release_date_has_official_evidence",
         "multi_month_period",
-        "cumulative_ytd_yoy_as_reported",
-        "seeded_from_frozen_pr13_snapshot"
+        "cumulative_ytd_yoy_as_reported"
       ]
     },
     "cn_fixed_asset_investment": {
       "name": "固定资产投资累计同比",
       "status": "available",
-      "observation_period": "2026-01/2026-08",
-      "observation_date": "2026-08-31",
-      "available_date": "2026-09-15",
+      "observation_period": "2026-01/2026-09",
+      "observation_date": "2026-09-30",
+      "available_date": "2026-10-19",
       "value": -7.2,
-      "previous_observation_period": "2026-01/2026-07",
-      "previous_value": -6.7,
-      "change_vs_previous_release": -0.5,
+      "previous_observation_period": "2026-01/2026-08",
+      "previous_value": -7.2,
+      "change_vs_previous_release": 0.0,
       "comparison_basis": "previous published observation; periods may span multiple months",
       "unit": "percent_yoy",
       "reported_as": "cumulative_ytd_yoy",
-      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965309.html",
-      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965309.html",
+      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261019_1965616.html",
+      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261019_1965616.html",
       "quality_flags": [
         "release_date_has_official_evidence",
         "multi_month_period",
-        "cumulative_ytd_yoy_as_reported",
-        "seeded_from_frozen_pr13_snapshot"
+        "cumulative_ytd_yoy_as_reported"
       ]
     },
     "cn_cpi": {
@@ -223,13 +220,13 @@
   "factors": {
     "growth": {
       "status": "available",
-      "score": -0.45367604034857145,
+      "score": -0.39248279681597864,
       "previous_score": -0.5002960495633455,
-      "change": 0.04662000921477405,
+      "change": 0.10781325274736686,
       "state": "below_expanding_mean",
       "minimum_prior_observations": 36,
       "contributions": {
-        "industrial_production_yoy": 0.05779361889189333,
+        "industrial_production_yoy": 0.11898686242448625,
         "retail_sales_yoy": -0.12953893500884028,
         "fixed_asset_investment_ytd_yoy": -0.5617316736870038,
         "pmi_new_orders": 0.17980094945537925
@@ -286,24 +283,46 @@
       "cn_10y",
       "cn_core_cpi"
     ],
-    "official_release_rows": 867,
+    "official_release_rows": 870,
     "official_release_evidence_rate": 1.0,
     "unknown_release_date_rows_in_ledger": 0
   },
   "quality": {
-    "new_releases": [],
+    "new_releases": [
+      {
+        "event": "new_release",
+        "series_id": "cn_industrial_production",
+        "observation_period": "2026-09",
+        "value": 5.5,
+        "vintage": "2026-10-19"
+      },
+      {
+        "event": "new_release",
+        "series_id": "cn_retail_sales_ytd",
+        "observation_period": "2026-01/2026-09",
+        "value": 1.1,
+        "vintage": "2026-10-19"
+      },
+      {
+        "event": "new_release",
+        "series_id": "cn_fixed_asset_investment",
+        "observation_period": "2026-01/2026-09",
+        "value": -7.2,
+        "vintage": "2026-10-19"
+      }
+    ],
     "historical_revisions": [],
     "provenance_updates": [],
     "stale_series": [
       {
         "series_id": "cn_retail_sales",
         "latest_period": "2026-06",
-        "age_days": 96
+        "age_days": 97
       },
       {
         "series_id": "cn_tsf_stock_yoy",
         "latest_period": "2025-08",
-        "age_days": 402
+        "age_days": 403
       }
     ],
     "missing_periods": [
@@ -410,9 +429,9 @@
   },
   "collection": {
     "status": "success",
-    "last_attempt_at": "2026-10-19T01:14:11+08:00",
+    "last_attempt_at": "2026-10-20T03:49:34+08:00",
     "errors": [],
-    "new_rows_appended": 0
+    "new_rows_appended": 3
   },
   "not_collected": [
     {

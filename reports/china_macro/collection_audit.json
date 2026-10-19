@@ -1,9 +1,9 @@
 {
   "schema_version": "china-macro-watch-audit/1",
   "status": "success",
-  "started_at": "2026-10-19T01:06:01+08:00",
-  "finished_at": "2026-10-19T01:14:11+08:00",
-  "as_of": "2026-10-19",
+  "started_at": "2026-10-20T03:41:06+08:00",
+  "finished_at": "2026-10-20T03:49:34+08:00",
+  "as_of": "2026-10-20",
   "scan_window": {
     "start_year": 2025,
     "end_year": 2026,
@@ -14,15 +14,15 @@
   "sources": {
     "nbs": {
       "listing_pages_scanned": 67,
-      "candidate_articles": 117,
+      "candidate_articles": 120,
       "fetch_error_count": 0,
       "unparsed_candidate_count": 0,
       "series": {
         "cn_industrial_production": {
-          "rows": 18,
+          "rows": 19,
           "first_observation": "2025-02-28",
-          "last_observation": "2026-08-31",
-          "confirmed_release_dates": 18,
+          "last_observation": "2026-09-30",
+          "confirmed_release_dates": 19,
           "unknown_release_dates": 0
         },
         "cn_retail_sales": {
@@ -33,17 +33,17 @@
           "unknown_release_dates": 0
         },
         "cn_retail_sales_ytd": {
-          "rows": 6,
+          "rows": 7,
           "first_observation": "2025-02-28",
-          "last_observation": "2026-08-31",
-          "confirmed_release_dates": 6,
+          "last_observation": "2026-09-30",
+          "confirmed_release_dates": 7,
           "unknown_release_dates": 0
         },
         "cn_fixed_asset_investment": {
-          "rows": 18,
+          "rows": 19,
           "first_observation": "2025-02-28",
-          "last_observation": "2026-08-31",
-          "confirmed_release_dates": 18,
+          "last_observation": "2026-09-30",
+          "confirmed_release_dates": 19,
           "unknown_release_dates": 0
         },
         "cn_cpi": {
@@ -75,7 +75,7 @@
           "unknown_release_dates": 0
         }
       },
-      "downloaded_at": "2026-10-19T01:13:35+08:00"
+      "downloaded_at": "2026-10-20T03:49:04+08:00"
     },
     "pboc": {
       "listing_pages_scanned": 38,
@@ -105,26 +105,70 @@
           "unknown_release_dates": 0
         }
       },
-      "downloaded_at": "2026-10-19T01:14:11+08:00"
+      "downloaded_at": "2026-10-20T03:49:34+08:00"
     }
   },
   "errors": [],
-  "new_rows_appended": 0,
-  "events": [],
+  "new_rows_appended": 3,
+  "events": [
+    {
+      "event": "new_release",
+      "series_id": "cn_industrial_production",
+      "observation_period": "2026-09",
+      "value": 5.5,
+      "vintage": "2026-10-19"
+    },
+    {
+      "event": "new_release",
+      "series_id": "cn_retail_sales_ytd",
+      "observation_period": "2026-01/2026-09",
+      "value": 1.1,
+      "vintage": "2026-10-19"
+    },
+    {
+      "event": "new_release",
+      "series_id": "cn_fixed_asset_investment",
+      "observation_period": "2026-01/2026-09",
+      "value": -7.2,
+      "vintage": "2026-10-19"
+    }
+  ],
   "quality": {
-    "new_releases": [],
+    "new_releases": [
+      {
+        "event": "new_release",
+        "series_id": "cn_industrial_production",
+        "observation_period": "2026-09",
+        "value": 5.5,
+        "vintage": "2026-10-19"
+      },
+      {
+        "event": "new_release",
+        "series_id": "cn_retail_sales_ytd",
+        "observation_period": "2026-01/2026-09",
+        "value": 1.1,
+        "vintage": "2026-10-19"
+      },
+      {
+        "event": "new_release",
+        "series_id": "cn_fixed_asset_investment",
+        "observation_period": "2026-01/2026-09",
+        "value": -7.2,
+        "vintage": "2026-10-19"
+      }
+    ],
     "historical_revisions": [],
     "provenance_updates": [],
     "stale_series": [
       {
         "series_id": "cn_retail_sales",
         "latest_period": "2026-06",
-        "age_days": 96
+        "age_days": 97
       },
       {
         "series_id": "cn_tsf_stock_yoy",
         "latest_period": "2025-08",
-        "age_days": 402
+        "age_days": 403
       }
     ],
     "missing_periods": [
@@ -230,5 +274,5 @@
     "unknown_release_dates": 0
   },
   "ledger": "data/raw/china/china_macro_snapshots.csv",
-  "ledger_rows": 869
+  "ledger_rows": 872
 }
