@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -12,16 +13,20 @@ from mrq_data.china_watch import (
 )
 from mrq_data.snapshots import validate_snapshot
 from mrq_engines.china_macro_report import build_china_macro_report
+from mrq_engines.pairs import PairSignalSpec, PairSpec, SpreadSpec
 from mrq_engines.pipeline import (
     build_china_baseline,
     build_us_baseline,
     country_source_coverage,
     load_monthly_panel,
 )
+from mrq_research.backtest.long_short import LongShortConfig
 from mrq_research.idea import IdeaError, evaluate_idea, load_signal_function
+from mrq_research.pairs import analyse_pair, backtest_pair
 from mrq_research.us_regime import analyze_us_regimes
 
 from mrq_cli.backtest_workbench.http_api import serve_api
+from mrq_cli.backtest_workbench.prices import load_market_prices
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -156,6 +161,39 @@ def build_parser() -> argparse.ArgumentParser:
     api.add_argument("--host", default="127.0.0.1")
     api.add_argument("--port", type=int, default=8000)
 
+    analyse = sub.add_parser(
+        "analyse-pair",
+        help="Test whether two assets share a stationary long-run relation",
+    )
+    analyse.add_argument("pair", help="Pair as SYM_A:SYM_B, e.g. KO:PEP")
+    analyse.add_argument("--start", default="2005-01-01")
+    analyse.add_argument("--end", default=None)
+    analyse.add_argument("--lookback", type=int, default=60)
+    analyse.add_argument("--price-kind", choices=["log", "level"], default="log")
+    analyse.add_argument("--beta-method", choices=["ols", "fixed"], default="ols")
+
+    backtest = sub.add_parser(
+        "backtest-pair",
+        help="Backtest a z-score pair strategy with two-leg costs and borrow fees",
+    )
+    backtest.add_argument("pair", help="Pair as SYM_A:SYM_B, e.g. KO:PEP")
+    backtest.add_argument("--start", default="2005-01-01")
+    backtest.add_argument("--end", default=None)
+    backtest.add_argument("--lookback", type=int, default=60)
+    backtest.add_argument("--entry-z", type=float, default=2.0)
+    backtest.add_argument("--exit-z", type=float, default=0.5)
+    backtest.add_argument("--stop-z", type=float, default=None)
+    backtest.add_argument("--max-holding-days", type=int, default=None)
+    backtest.add_argument("--price-kind", choices=["log", "level"], default="log")
+    backtest.add_argument("--beta-method", choices=["ols", "fixed"], default="ols")
+    backtest.add_argument("--fixed-beta", type=float, default=1.0)
+    backtest.add_argument("--hedge-mode", choices=["beta_neutral", "dollar_neutral"], default="beta_neutral")
+    backtest.add_argument("--fee-bps", type=float, default=5.0, help="Commission on traded notional")
+    backtest.add_argument("--slippage-bps", type=float, default=2.0)
+    backtest.add_argument("--borrow-bps", type=float, default=50.0, help="Annual borrow fee on the short leg")
+    backtest.add_argument("--risk-free-rate", type=float, default=0.0)
+    backtest.add_argument("--output", default="reports/pairs")
+
     return parser
 
 
@@ -246,6 +284,228 @@ def _run_test_idea(args) -> None:
 
     for w in d.warnings:
         print(f"\n! {w}")
+
+
+def _parse_pair(text: str) -> tuple[str, str]:
+    cleaned = text.replace(",", ":").strip().upper()
+    parts = [part.strip() for part in cleaned.split(":") if part.strip()]
+    if len(parts) != 2:
+        raise SystemExit(f"error: a pair is written as SYM_A:SYM_B, got {text!r}")
+    if parts[0] == parts[1]:
+        raise SystemExit(f"error: a pair needs two different assets, got {text!r}")
+    return parts[0], parts[1]
+
+
+def _load_pair_prices(
+    asset_a: str,
+    asset_b: str,
+    start: str | None,
+    end: str | None,
+) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+    try:
+        prices, sources = load_market_prices([asset_a, asset_b], start=start, end=end)
+    except (RuntimeError, ValueError) as exc:
+        raise SystemExit(f"error loading prices for {asset_a}/{asset_b}: {exc}") from exc
+    if prices.empty:
+        raise SystemExit(f"No price data for {asset_a}/{asset_b} in the requested range")
+    return prices, [source.to_dict() for source in sources]
+
+
+def _print_pair_diagnostics(diagnostics) -> None:
+    print(f"\nSample: {diagnostics.start.date()} .. {diagnostics.end.date()} "
+          f"({diagnostics.observations} common sessions)")
+    print(f"Hedge ratio (trailing, point-in-time): "
+          f"mean {diagnostics.hedge_ratio_mean:.3f}, "
+          f"sd {diagnostics.hedge_ratio_std:.3f}, "
+          f"last {diagnostics.hedge_ratio_last:.3f}")
+    print(f"Cointegration (Engle-Granger, ADF on residuals): "
+          f"statistic {diagnostics.cointegration_statistic:.2f} "
+          f"(5% critical {diagnostics.cointegration_critical_values['5%']:.2f}) "
+          f"-> {diagnostics.cointegration_verdict}")
+    print(f"Spread half-life: {diagnostics.spread_half_life:.1f} days")
+    print(f"Daily return correlation: {diagnostics.return_correlation:.3f}")
+    print(f"Hedge ratio non-positive on: {diagnostics.hedge_ratio_non_positive_share:.0%} of sessions")
+
+    if not diagnostics.ratio_path.empty:
+        path = diagnostics.ratio_path
+        print("\nYear-end price ratio (a persistent walk here means a trend, not a spread):")
+        print(
+            "  "
+            + "  ".join(
+                f"{int(year)}:{ratio:.3f}"
+                for year, ratio in zip(path["year"], path["price_ratio"], strict=True)
+            )
+        )
+
+    print("\nForward behaviour of the spread, by how stretched it was:")
+    table = diagnostics.reversion.copy()
+    print(table.to_string(index=False, float_format=lambda value: f"{value:+.3f}"))
+    for warning in diagnostics.warnings:
+        print(f"\n! {warning}")
+
+
+def _run_analyse_pair(args) -> None:
+    asset_a, asset_b = _parse_pair(args.pair)
+    prices, sources = _load_pair_prices(asset_a, asset_b, args.start, args.end)
+    spec = PairSpec(
+        asset_a=asset_a,
+        asset_b=asset_b,
+        spread=SpreadSpec(
+            lookback=args.lookback,
+            price_kind=args.price_kind,
+            beta_method=args.beta_method,
+        ),
+    )
+    diagnostics = analyse_pair(prices, spec)
+    print(f"\nPair: {spec.name}")
+    for source in sources:
+        print(f"  {source['symbol']}: {source['price_basis']} "
+              f"({source['provider']}, {source['first_date']}..{source['last_date']})")
+    _print_pair_diagnostics(diagnostics)
+
+
+def _markdown_table(frame: pd.DataFrame) -> str:
+    """Render a frame as a markdown table.
+
+    pandas' own ``to_markdown`` needs the optional ``tabulate`` package, and
+    this workspace does not depend on it.
+    """
+
+    if frame.empty:
+        return ""
+    header = "| " + " | ".join(str(column) for column in frame.columns) + " |"
+    divider = "| " + " | ".join("---" for _ in frame.columns) + " |"
+    rows = [
+        "| " + " | ".join(f"{value:.4g}" if isinstance(value, float) else str(value) for value in row) + " |"
+        for row in frame.itertuples(index=False, name=None)
+    ]
+    return "\n".join([header, divider, *rows])
+
+
+def _pair_markdown(backtest, sources: list[dict[str, object]]) -> str:
+    diagnostics = backtest.diagnostics
+    metrics = backtest.result.metrics
+    spec = backtest.spec
+    lines = [
+        f"# 配对交易回测：{spec.name}",
+        "",
+        "## 结论",
+        "",
+        (
+            f"- 协整检验：{diagnostics.cointegration_verdict}"
+            f"（统计量 {diagnostics.cointegration_statistic:.2f}，"
+            f"5% 临界值 {diagnostics.cointegration_critical_values['5%']:.2f}）"
+        ),
+        f"- 价差半衰期：{diagnostics.spread_half_life:.1f} 天",
+        (
+            f"- 样本：{diagnostics.start.date()} .. {diagnostics.end.date()}"
+            f"（{diagnostics.observations} 个共同交易日）"
+        ),
+        (
+            f"- 年化收益 {metrics['cagr']:+.2%}，波动 {metrics['vol']:.2%}，"
+            f"Sharpe {metrics['sharpe']:.2f}，最大回撤 {metrics['max_drawdown']:.2%}"
+        ),
+        (
+            f"- 总换手 {metrics['total_turnover']:.2f}，"
+            f"交易成本 {metrics['total_trading_cost']:.2%}，"
+            f"借券成本 {metrics['total_borrow_cost']:.2%}"
+        ),
+        "",
+        "## 参数",
+        "",
+        f"- 回看窗口：{spec.spread.lookback} 个交易日",
+        f"- 价格形式：{spec.spread.price_kind}；对冲比率方法：{spec.spread.beta_method}",
+        f"- 对冲方式：{spec.hedge_mode}",
+        f"- 进出场阈值：Z ≥ {spec.signal.entry_z} 开仓，|Z| ≤ {spec.signal.exit_z} 平仓",
+        "",
+        "## 数据来源",
+        "",
+    ]
+    for source in sources:
+        lines.append(
+            f"- {source['symbol']}：{source['price_basis']}，"
+            f"provider={source['provider']}，抓取时间 {source['retrieved_at']}"
+        )
+    lines += [
+        "",
+        "## 均值回复",
+        "",
+        _markdown_table(diagnostics.reversion),
+        "",
+        "## 年末价格比",
+        "",
+        _markdown_table(diagnostics.ratio_path),
+        "",
+        "## 风险提示",
+        "",
+        "- Yahoo 自动复权价没有 point-in-time 版本，历史公司行为会回溯改写整段价格。",
+        "- 上述参数未做样本外验证；用同一段数据选参数再报结果属于过拟合。",
+        "- 借券费率是假设值，真实费率随标的和时间变化，且可能无法借到券。",
+    ]
+    for warning in diagnostics.warnings:
+        lines.append(f"- {warning}")
+    return "\n".join(lines) + "\n"
+
+
+def _run_backtest_pair(args) -> None:
+    asset_a, asset_b = _parse_pair(args.pair)
+    prices, sources = _load_pair_prices(asset_a, asset_b, args.start, args.end)
+    spec = PairSpec(
+        asset_a=asset_a,
+        asset_b=asset_b,
+        spread=SpreadSpec(
+            lookback=args.lookback,
+            price_kind=args.price_kind,
+            beta_method=args.beta_method,
+            fixed_beta=args.fixed_beta,
+        ),
+        signal=PairSignalSpec(
+            entry_z=args.entry_z,
+            exit_z=args.exit_z,
+            stop_z=args.stop_z,
+            max_holding_days=args.max_holding_days,
+        ),
+        hedge_mode=args.hedge_mode,
+    )
+    config = LongShortConfig(
+        transaction_cost_bps=args.fee_bps,
+        slippage_bps=args.slippage_bps,
+        borrow_annual_bps=args.borrow_bps,
+        risk_free_rate=args.risk_free_rate,
+    )
+    backtest = backtest_pair(prices, spec, config)
+    metrics = backtest.result.metrics
+
+    print(f"\nPair: {spec.name}")
+    _print_pair_diagnostics(backtest.diagnostics)
+
+    print("\nBacktest:")
+    print(f"  CAGR              {metrics['cagr']:+.2%}")
+    print(f"  Volatility        {metrics['vol']:.2%}")
+    print(f"  Sharpe            {metrics['sharpe']:.2f}")
+    print(f"  Max drawdown      {metrics['max_drawdown']:.2%}")
+    print(f"  Calmar            {metrics['calmar']:.2f}")
+    print(f"  Total turnover    {metrics['total_turnover']:.2f}")
+    print(f"  Trading costs     {metrics['total_trading_cost']:.2%}")
+    print(f"  Borrow costs      {metrics['total_borrow_cost']:.2%}")
+    print(f"  Avg gross exposure {metrics['average_gross_exposure']:.2%}")
+    print(f"  Avg net exposure   {metrics['average_net_exposure']:.2%}")
+    print(f"  Round trips       {int(backtest.frame['exit'].sum())}")
+
+    out = Path(args.output)
+    out.mkdir(parents=True, exist_ok=True)
+    stem = spec.name.replace("/", "_")
+    backtest.frame.to_csv(out / f"{stem}_timeseries.csv")
+    payload = backtest.to_dict()
+    payload["sources"] = sources
+    (out / f"{stem}_report.json").write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False, default=str),
+        encoding="utf-8",
+    )
+    (out / f"{stem}_report.md").write_text(
+        _pair_markdown(backtest, sources), encoding="utf-8"
+    )
+    print(f"\nWrote {out}/{stem}_report.md and {stem}_timeseries.csv")
 
 
 def main() -> None:
@@ -374,6 +634,14 @@ def main() -> None:
         fwd.to_csv(out / "forward_returns.csv")
         summary.to_csv(out / "regime_return_summary.csv", index=False)
         print(f"Wrote US regime research outputs to {out}")
+        return
+
+    if args.command == "analyse-pair":
+        _run_analyse_pair(args)
+        return
+
+    if args.command == "backtest-pair":
+        _run_backtest_pair(args)
         return
 
 

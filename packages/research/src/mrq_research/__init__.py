@@ -8,13 +8,25 @@ from .factor_test import (
 )
 from .forward_returns import forward_returns, regime_return_summary
 from .idea import IdeaError, IdeaResult, evaluate_idea, load_signal_function
+from .pairs import (
+    PairBacktest,
+    PairDiagnostics,
+    analyse_pair,
+    backtest_pair,
+    build_pair_instructions,
+)
 
 __all__ = [
     "DEFAULT_HORIZONS",
     "FactorDiagnostics",
     "IdeaError",
     "IdeaResult",
+    "PairBacktest",
+    "PairDiagnostics",
     "analyse_factor",
+    "analyse_pair",
+    "backtest_pair",
+    "build_pair_instructions",
     "evaluate_idea",
     "forward_returns",
     "load_signal_function",
