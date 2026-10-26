@@ -3,17 +3,22 @@ import pandas as pd
 import pytest
 from mrq_engines.pairs import PairSignalSpec, PairSpec, SpreadSpec
 from mrq_research.backtest.long_short import LongShortConfig, run_long_short_backtest
-from mrq_research.pairs import backtest_pair, build_pair_instructions
+from mrq_research.pairs import backtest_pair, build_pair_instructions, combine_pair_returns
 
 
 def _cointegrated_pair(periods: int = 900, seed: int = 17) -> pd.DataFrame:
-    """Two prices on one random walk, so their log ratio wanders around zero."""
+    """Two prices on one random walk, so their log ratio wanders around zero.
+
+    The daily volatility is deliberately realistic: a synthetic pair whose
+    legs move 40% a day would be levered into a margin call by any honest
+    accounting, which would say nothing about the strategy.
+    """
 
     rng = np.random.default_rng(seed)
     index = pd.date_range("2016-01-01", periods=periods, freq="B")
-    common = rng.normal(0.0, 1.0, periods).cumsum()
-    a = 60.0 * np.exp(0.4 * common + rng.normal(0.0, 0.08, periods))
-    b = 45.0 * np.exp(0.4 * common + rng.normal(0.0, 0.08, periods))
+    common = rng.normal(0.0, 0.010, periods).cumsum()
+    a = 60.0 * np.exp(0.4 * common + rng.normal(0.0, 0.010, periods))
+    b = 45.0 * np.exp(0.4 * common + rng.normal(0.0, 0.010, periods))
     return pd.DataFrame({"A": a, "B": b}, index=index)
 
 
@@ -151,3 +156,37 @@ def test_pair_backtest_reports_the_spread_evidence_it_ran_on():
     assert diagnostics.cointegration_statistic < 0
     assert not diagnostics.reversion.empty
     assert backtest.frame["zscore"].notna().any()
+
+
+def test_combining_pairs_weights_them_equally_and_reports_coverage():
+    index = pd.date_range("2025-01-01", periods=5, freq="B")
+    first = pd.Series([0.01, 0.02, -0.01, 0.0, 0.03], index=index)
+    second = pd.Series([-0.01, 0.0, 0.01, 0.0, -0.03], index=index)
+    # The second pair only starts later, so early days have one live pair.
+    second = second.copy()
+    second.iloc[:2] = float("nan")
+
+    portfolio, metrics = combine_pair_returns({"A/B": first, "C/D": second})
+
+    assert portfolio.iloc[0] == pytest.approx(0.01)
+    assert portfolio.iloc[2] == pytest.approx(0.0)
+    assert metrics["pairs_in_book"] == pytest.approx(2.0)
+    assert np.isfinite(metrics["sharpe"])
+
+
+def test_combination_counts_the_pairs_that_are_holding_not_the_ones_returning():
+    index = pd.date_range("2025-01-01", periods=4, freq="B")
+    first = pd.Series([0.01, 0.0, 0.0, -0.01], index=index)
+    second = pd.Series([0.0, 0.0, 0.0, 0.0], index=index)
+    positions = {
+        "A/B": pd.Series([1.0, 0.0, 0.0, -1.0], index=index),
+        "C/D": pd.Series([0.0, 0.0, 0.0, 0.0], index=index),
+    }
+
+    _, metrics = combine_pair_returns({"A/B": first, "C/D": second}, positions=positions)
+
+    # A flat pair still has a return of 0.0, so counting returns would report
+    # both pairs as active on every day.
+    assert metrics["average_holding_pairs"] == pytest.approx(0.5)
+    assert metrics["maximum_holding_pairs"] == pytest.approx(1.0)
+    assert metrics["pairs_in_book"] == pytest.approx(2.0)

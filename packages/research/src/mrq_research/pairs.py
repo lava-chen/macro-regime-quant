@@ -28,6 +28,7 @@ from mrq_engines.pairs import (
 )
 
 from .backtest.long_short import LongShortConfig, LongShortResult, run_long_short_backtest
+from .backtest.metrics import summary
 
 
 @dataclass(frozen=True)
@@ -290,6 +291,44 @@ def build_pair_instructions(
         axis=1,
     )
     return instructions, frame
+
+
+def combine_pair_returns(
+    returns: dict[str, pd.Series],
+    periods_per_year: int = 252,
+    positions: dict[str, pd.Series] | None = None,
+) -> tuple[pd.Series, dict[str, float]]:
+    """Combine several pairs into one equally weighted book.
+
+    Each pair is dollar neutral on its own, so an equal weight across pairs is
+    an equal weight across capital rather than across risk. Days on which a
+    pair has no position contribute nothing rather than shrinking the whole
+    book.
+
+    ``positions`` is the per-pair position series. When it is given, the
+    report says how many pairs were actually holding something — counting
+    pairs that merely have a return value would report every pair as active
+    on every day, because a flat pair's return is a real 0.0 and not a gap.
+    """
+
+    if not returns:
+        raise ValueError("At least one pair return series is required")
+    frame = pd.DataFrame(returns).sort_index()
+    portfolio = frame.mean(axis=1)
+    metrics = summary(portfolio, periods_per_year)
+
+    if positions:
+        position_frame = pd.DataFrame(positions).reindex(frame.index).fillna(0.0)
+        held = (position_frame.abs() > 0).sum(axis=1)
+        metrics["average_holding_pairs"] = float(held.mean())
+        metrics["minimum_holding_pairs"] = float(held.min())
+        metrics["maximum_holding_pairs"] = float(held.max())
+    else:
+        metrics["average_holding_pairs"] = float("nan")
+        metrics["minimum_holding_pairs"] = float("nan")
+        metrics["maximum_holding_pairs"] = float("nan")
+    metrics["pairs_in_book"] = float(frame.shape[1])
+    return portfolio.rename("portfolio_return"), metrics
 
 
 def backtest_pair(

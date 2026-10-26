@@ -19,9 +19,9 @@ def _geometric_pair(periods: int = 600, seed: int = 7) -> pd.DataFrame:
 
     rng = np.random.default_rng(seed)
     index = pd.date_range("2018-01-01", periods=periods, freq="B")
-    common = rng.normal(0.0, 1.0, periods).cumsum()
-    a = 100.0 * np.exp(0.5 * common + rng.normal(0.0, 0.05, periods))
-    b = 80.0 * np.exp(0.5 * common + rng.normal(0.0, 0.05, periods))
+    common = rng.normal(0.0, 0.010, periods).cumsum()
+    a = 100.0 * np.exp(0.5 * common + rng.normal(0.0, 0.010, periods))
+    b = 80.0 * np.exp(0.5 * common + rng.normal(0.0, 0.010, periods))
     return pd.DataFrame({"A": a, "B": b}, index=index)
 
 

@@ -14,6 +14,7 @@ from .pairs import (
     analyse_pair,
     backtest_pair,
     build_pair_instructions,
+    combine_pair_returns,
 )
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     "analyse_pair",
     "backtest_pair",
     "build_pair_instructions",
+    "combine_pair_returns",
     "evaluate_idea",
     "forward_returns",
     "load_signal_function",

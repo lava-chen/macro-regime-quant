@@ -185,6 +185,24 @@ spread is z-scored on the same window, and nothing is filled at the same
 close it was signalled on. See [docs/pairs_strategy.md](docs/pairs_strategy.md)
 for the full contract, including what the diagnostics do and do not prove.
 
+To work on a list of candidate pairs rather than one pair, screen them first
+and then trade only what survives:
+
+```bash
+uv run macro-regime-quant screen-pairs --pairs-file config/pairs.yaml
+uv run macro-regime-quant backtest-pairs --pairs-file config/pairs.yaml
+```
+
+Selecting pairs on the same window the backtest runs in is how a pair list
+turns into a list of survivors that only look good in hindsight. The
+walk-forward command screens on one window and trades the next:
+
+```bash
+uv run macro-regime-quant walk-forward-pairs \
+    --is-start 2010-01-01 --is-end 2014-12-31 \
+    --oos-start 2015-01-01 --oos-end 2019-12-31
+```
+
 ## CBOE VIX historical data
 
 The repository tracks the historical VIX OHLC dataset imported from
