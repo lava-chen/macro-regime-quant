@@ -147,6 +147,24 @@ series:
     frequency: daily
     release_lag_days: 0
 
+  # Single stocks, used as pair-trading legs. Yahoo auto-adjusts for splits and
+  # dividends, but the history is not a point-in-time vintage.
+  ko:
+    provider: yahoo
+    symbol: KO
+    kind: market
+    frequency: daily
+    release_lag_days: 0
+    notes: "Coca-Cola; pair-trading leg. Auto-adjusted close, no vintage."
+
+  pep:
+    provider: yahoo
+    symbol: PEP
+    kind: market
+    frequency: daily
+    release_lag_days: 0
+    notes: "PepsiCo; pair-trading leg. Auto-adjusted close, no vintage."
+
 
   cn_industrial_production:
     provider: csv
