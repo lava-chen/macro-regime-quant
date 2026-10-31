@@ -1,8 +1,8 @@
 {
   "schema_version": "china-macro-watch-report/1",
-  "as_of": "2026-10-31",
-  "generated_at": "2026-10-31T03:03:59+08:00",
-  "data_updated_at": "2026-10-20T03:49:04+08:00",
+  "as_of": "2026-11-01",
+  "generated_at": "2026-11-01T02:20:31+08:00",
+  "data_updated_at": "2026-11-01T02:19:59+08:00",
   "classification": {
     "observed_data": "Official reported values and evidenced publication dates.",
     "model_inference": "Past-only standardized factors and the Growth/Inflation quadrant label.",
@@ -136,21 +136,20 @@
     "cn_pmi_new_orders": {
       "name": "制造业 PMI 新订单",
       "status": "available",
-      "observation_period": "2026-09",
-      "observation_date": "2026-09-30",
-      "available_date": "2026-09-30",
-      "value": 50.5,
-      "previous_observation_period": "2026-08",
-      "previous_value": 50.6,
-      "change_vs_previous_release": -0.10000000000000142,
+      "observation_period": "2026-10",
+      "observation_date": "2026-10-31",
+      "available_date": "2026-10-31",
+      "value": 49.4,
+      "previous_observation_period": "2026-09",
+      "previous_value": 50.5,
+      "change_vs_previous_release": -1.1000000000000014,
       "comparison_basis": "previous published observation; periods may span multiple months",
       "unit": "index_points",
       "reported_as": "index_points",
-      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260930_1965449.html",
-      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202609/t20260930_1965449.html",
+      "source_value_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261031_1965718.html",
+      "availability_evidence_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261031_1965718.html",
       "quality_flags": [
-        "release_date_has_official_evidence",
-        "seeded_from_frozen_pr13_snapshot"
+        "release_date_has_official_evidence"
       ]
     },
     "cn_m1": {
@@ -220,41 +219,41 @@
   "factors": {
     "growth": {
       "status": "available",
-      "score": -0.39248279681597864,
-      "previous_score": -0.5002960495633455,
-      "change": 0.10781325274736686,
+      "score": -0.5534376561075337,
+      "previous_score": -0.5919258668000971,
+      "change": 0.03848821069256336,
       "state": "below_expanding_mean",
       "minimum_prior_observations": 36,
       "contributions": {
-        "industrial_production_yoy": 0.11898686242448625,
-        "retail_sales_yoy": -0.12953893500884028,
-        "fixed_asset_investment_ytd_yoy": -0.5617316736870038,
-        "pmi_new_orders": 0.17980094945537925
+        "industrial_production_yoy": 0.1178694648940066,
+        "retail_sales_yoy": -0.12801891162091536,
+        "fixed_asset_investment_ytd_yoy": -0.5238057451232104,
+        "pmi_new_orders": -0.019482464257414556
       }
     },
     "inflation": {
       "status": "available",
-      "score": 0.5364876016510626,
-      "previous_score": 0.368353011885935,
-      "change": 0.16813458976512757,
+      "score": 0.5280862599427117,
+      "previous_score": 0.5364876016510626,
+      "change": -0.008401341708350829,
       "state": "above_expanding_mean",
       "minimum_prior_observations": 36,
       "contributions": {
-        "cpi_yoy": 0.11226079897198511,
-        "ppi_yoy": 0.4242268026790775
+        "cpi_yoy": 0.11130432974226018,
+        "ppi_yoy": 0.4167819302004516
       }
     },
     "liquidity": {
       "status": "available",
-      "score": -0.9761093037720121,
-      "previous_score": -0.9300312278141387,
-      "change": -0.04607807595787339,
+      "score": -0.9697674250992158,
+      "previous_score": -0.9761093037720121,
+      "change": 0.006341878672796342,
       "state": "below_expanding_mean",
       "minimum_prior_observations": 36,
       "contributions": {
-        "m1_yoy": -0.219137888974303,
-        "m2_yoy": -0.2251554609335846,
-        "tsf_stock_yoy": -0.5318159538641246
+        "m1_yoy": -0.21836666673763186,
+        "m2_yoy": -0.22390164536650795,
+        "tsf_stock_yoy": -0.5274991129950759
       }
     },
     "real_rate": {
@@ -283,24 +282,32 @@
       "cn_10y",
       "cn_core_cpi"
     ],
-    "official_release_rows": 870,
+    "official_release_rows": 871,
     "official_release_evidence_rate": 1.0,
     "unknown_release_date_rows_in_ledger": 0
   },
   "quality": {
-    "new_releases": [],
+    "new_releases": [
+      {
+        "event": "new_release",
+        "series_id": "cn_pmi_new_orders",
+        "observation_period": "2026-10",
+        "value": 49.4,
+        "vintage": "2026-10-31"
+      }
+    ],
     "historical_revisions": [],
     "provenance_updates": [],
     "stale_series": [
       {
         "series_id": "cn_retail_sales",
         "latest_period": "2026-06",
-        "age_days": 108
+        "age_days": 109
       },
       {
         "series_id": "cn_tsf_stock_yoy",
         "latest_period": "2025-08",
-        "age_days": 414
+        "age_days": 415
       }
     ],
     "missing_periods": [
@@ -407,9 +414,9 @@
   },
   "collection": {
     "status": "success",
-    "last_attempt_at": "2026-10-31T03:03:59+08:00",
+    "last_attempt_at": "2026-11-01T02:20:30+08:00",
     "errors": [],
-    "new_rows_appended": 0
+    "new_rows_appended": 1
   },
   "not_collected": [
     {
