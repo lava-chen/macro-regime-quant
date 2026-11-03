@@ -1,0 +1,37 @@
+# Candidate pairs for the pair-trading screen.
+#
+# Pairs are grouped by shared business: two companies in the same industry
+# face the same demand, the same input costs and the same regulatory weather,
+# so their relative price is the first thing worth testing for a long-run
+# relation. A pair that fails the cointegration screen is not a trade — it is
+# two different businesses whose prices happened to move together.
+#
+# `screen-pairs` reads this file; `backtest-pairs` backtests whatever passes.
+pairs:
+  - [KO, PEP]      # soft drinks
+  - [PG, CL]       # household products
+  - [MDLZ, KHC]    # packaged food
+  - [GIS, KHC]    # packaged food (the obvious partner, Kellanova, was taken
+                  # private in 2025 and its price history is no longer available)
+  - [HRL, CAG]     # packaged food
+  - [HSY, MDLZ]    # confectionery vs snacks
+  - [MCD, YUM]     # restaurants
+  - [NKE, SBUX]    # consumer brands
+  - [HD, LOW]      # home improvement retail
+  - [TGT, KSS]     # discount retail
+  - [JPM, BAC]     # universal banks
+  - [C, WFC]       # universal banks
+  - [GS, MS]       # investment banks
+  - [XOM, CVX]     # integrated oil
+  - [COP, EOG]     # exploration and production
+  - [PFE, MRK]     # large pharma
+  - [JNJ, ABBV]    # large pharma
+  - [BMY, AMGN]    # large pharma
+  - [INTC, AMD]    # semiconductors
+  - [IBM, CSCO]    # enterprise technology
+  - [NVDA, AVGO]   # semiconductors
+  - [T, VZ]        # telecom
+  - [DAL, UAL]     # airlines
+  - [GM, F]        # autos
+  - [DOW, LYB]     # chemicals
+  - [CAT, DE]      # machinery

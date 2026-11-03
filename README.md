@@ -158,6 +158,51 @@ strictly after the signal, so a strong result cannot come from the test peeking
 at the future. See [docs/research_loop.md](docs/research_loop.md) for the full
 guide and the meaning of each column.
 
+## Pair trading
+
+Check whether two assets share a stationary long-run relation before spending
+any time on the trade itself:
+
+```bash
+uv run macro-regime-quant analyse-pair KO:PEP --start 2010-01-01
+```
+
+Then backtest the z-score strategy with two-leg costs, borrow fees and a
+one-day execution lag:
+
+```bash
+uv run macro-regime-quant backtest-pair KO:PEP \
+    --lookback 120 --entry-z 2 --exit-z 0.5 \
+    --fee-bps 5 --slippage-bps 2 --borrow-bps 50 \
+    --output reports/pairs
+```
+
+Prices come from `data/raw/market/<SYM>.csv` when that snapshot exists and
+from Yahoo otherwise; `python scripts/fetch_market_snapshot.py KO PEP` writes
+the snapshot so runs are reproducible and work offline. The hedge ratio is
+estimated on a trailing window that ends the day before the signal, the
+spread is z-scored on the same window, and nothing is filled at the same
+close it was signalled on. See [docs/pairs_strategy.md](docs/pairs_strategy.md)
+for the full contract, including what the diagnostics do and do not prove.
+
+To work on a list of candidate pairs rather than one pair, screen them first
+and then trade only what survives:
+
+```bash
+uv run macro-regime-quant screen-pairs --pairs-file config/pairs.yaml
+uv run macro-regime-quant backtest-pairs --pairs-file config/pairs.yaml
+```
+
+Selecting pairs on the same window the backtest runs in is how a pair list
+turns into a list of survivors that only look good in hindsight. The
+walk-forward command screens on one window and trades the next:
+
+```bash
+uv run macro-regime-quant walk-forward-pairs \
+    --is-start 2010-01-01 --is-end 2014-12-31 \
+    --oos-start 2015-01-01 --oos-end 2019-12-31
+```
+
 ## CBOE VIX historical data
 
 The repository tracks the historical VIX OHLC dataset imported from
