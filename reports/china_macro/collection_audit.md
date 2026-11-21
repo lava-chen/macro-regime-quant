@@ -1,7 +1,7 @@
 # China Macro Data Watch — collection audit
 
 - Status: **success**
-- Finished: `2026-11-21T05:45:34+08:00` (Asia/Shanghai)
+- Finished: `2026-11-22T04:27:24+08:00` (Asia/Shanghai)
 - Window: `2025`–`2026`
 - Ledger rows: 880; appended this run: 0
 
